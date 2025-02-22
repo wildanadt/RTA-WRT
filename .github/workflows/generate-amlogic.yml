@@ -352,13 +352,35 @@ jobs:
                 sudo ./remake -b ${{ env.openwrt_board }} -k ${{ inputs.openwrt_kernel }} -s 1024
                 
                 # Cari file output dan pindahkan
-                find ./openwrt/out/ -name "*.img.gz" | while read FILE_PATH; do
-                  if [ -n "$FILE_PATH" ]; then
-                    NEW_NAME="RTA-WRT_$(basename "$FILE_PATH" .img.gz)_${tunnel}.img.gz"
-                    sudo mv "$FILE_PATH" "$GITHUB_WORKSPACE/${{ env.WORKING_DIR }}/compiled_images/$NEW_NAME"
-                  fi
+                find "./openwrt/out/" -name "*.img.gz" | while read -r FILE_PATH; do
+                    # Skip if file path is empty
+                    if [ -z "$FILE_PATH" ]; then
+                        echo "Warning: Empty file path encountered, skipping..."
+                        continue
+                    fi
+
+                    # Skip if file doesn't exist
+                    if [ ! -f "$FILE_PATH" ]; then
+                        echo "Warning: File $FILE_PATH not found, skipping..."
+                        continue
+                    }
+
+                    # Extract base name without .img.gz extension
+                    BASE_NAME=$(basename "$FILE_PATH" .img.gz)
+                    
+                    # Create new filename
+                    NEW_NAME="RTA-WRT_${BASE_NAME}_${tunnel}.img.gz"
+                    TARGET_PATH="${GITHUB_WORKSPACE}/${WORKING_DIR}/compiled_images/${NEW_NAME}"
+
+                    # Move file with error handling
+                    if sudo mv "$FILE_PATH" "$TARGET_PATH"; then
+                        echo "Successfully renamed: $FILE_PATH -> $TARGET_PATH"
+                    else
+                        echo "Error: Failed to move $FILE_PATH to $TARGET_PATH"
+                        exit 1
+                    fi
                 done
-                
+
                 # Kembali ke directory awal
                 cd $GITHUB_WORKSPACE/${{ env.WORKING_DIR }}
               fi
