@@ -87,8 +87,52 @@ jobs:
 
           echo "Selected tunnel option: [ $TUNNEL ]"
 
+      - name: Setup Release Environment
+        id: setuprelease
+        run: |
+          BASE="${RELEASE_BRANCH%:*}"
+          BRANCH="${RELEASE_BRANCH#*:}"
+          # Set date variables
+          echo "DATE=$(date +'%d%m%Y')" >> $GITHUB_ENV
+          echo "DATETIME=$(date +'%d.%m.%Y-%H:%M:%S')" >> $GITHUB_ENV
+          echo "DATEMONTH=$(date +"%B-%Y" | awk '{print tolower($0)}')" >> $GITHUB_ENV
+
+          if [ "${BASE}" == "openwrt" ]; then
+            echo "RELEASE_NAME=RTA-WRT_OpenWRT-${BRANCH}-${DATE}" >> $GITHUB_ENV
+            echo "RELEASE_TAG=rtawrt-openwrt-${BRANCH}-${DATE}" >> $GITHUB_ENV
+          else
+            echo "RELEASE_NAME=RTA-WRT_ImmortalWRT-${BRANCH}-${DATE}" >> $GITHUB_ENV
+            echo "RELEASE_TAG=rtawrt-immortalwrt-${BRANCH}-${DATE}" >> $GITHUB_ENV
+          fi
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        if: steps.setuprelease.outputs.status == 'success'
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_NAME }}
+          prerelease: ${{ github.ref_name == 'dev' }}
+          body: |
+            # 🚀 RTA-WRT - Release Information
+
+            ## 📥 Download Statistics
+            ![GitHub Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ env.RELEASE_TAG }}/total?style=for-the-badge&logo=Openwrt)
+
+            ## 📢 Support Channels
+            [![Channel](https://img.shields.io/badge/Telegram-Channel-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/rtawrt) [![Group](https://img.shields.io/badge/Telegram-Group-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/backup_rtawrt) [![Personal](https://img.shields.io/badge/Telegram-Personal-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/RizkiKotet)
+
+            ## NOTES
+            `Amlogic s905x Support Mod SDCard`
+
+            ## 📝 Changelog Firmware
+            [**Changelog Firmware**](https://github.com/rizkikotet-dev/RTA-WRT/blob/main/CHANGELOG.md "**Changelog Firmware**")
+          generate_release_notes: true
+
   build-firmware:
-    name: Build ${{ matrix.target }}-${{ matrix.tunnel }}
+    name: Build ${{ matrix.target }} Firmware
     needs: prebuild
     runs-on: ubuntu-22.04
     strategy:
@@ -183,11 +227,6 @@ jobs:
           echo "BRANCH=$BRANCH" >> $GITHUB_ENV
           echo "VEROP=$VEROP" >> $GITHUB_ENV
           echo "DOWNLOAD_BASE=https://downloads.${BASE}.org" >> $GITHUB_ENV
-
-          # Set date variables
-          echo "DATE=$(date +'%d%m%Y')" >> $GITHUB_ENV
-          echo "DATETIME=$(date +'%d.%m.%Y-%H:%M:%S')" >> $GITHUB_ENV
-          echo "DATEMONTH=$(date +"%B-%Y" | awk '{print tolower($0)}')" >> $GITHUB_ENV
 
           echo "status=success" >> $GITHUB_OUTPUT
 
@@ -285,15 +324,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "rtawrt-${{ env.BASE }}-${{ env.BRANCH }}-${{ env.DATE }}"
-          name: RTA-WRT-${{ env.BASE }}-${{ env.BRANCH }}-${{ env.DATE }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_NAME }}
           files: ${{ env.WORKING_DIR }}/compiled_images/*.gz
           prerelease: ${{ github.ref_name == 'dev' }}
           body: |
             # 🚀 RTA-WRT - Release Information
 
             ## 📥 Download Statistics
-            ![GitHub Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/rtawrt-${{ env.BASE }}-${{ env.BRANCH }}-${{ env.DATE }}/total?style=for-the-badge&logo=Openwrt)
+            ![GitHub Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ env.RELEASE_TAG }}/total?style=for-the-badge&logo=Openwrt)
 
             ## 📢 Support Channels
             [![Channel](https://img.shields.io/badge/Telegram-Channel-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/rtawrt) [![Group](https://img.shields.io/badge/Telegram-Group-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/backup_rtawrt) [![Personal](https://img.shields.io/badge/Telegram-Personal-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/RizkiKotet)

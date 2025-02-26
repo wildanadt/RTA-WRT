@@ -117,8 +117,52 @@ jobs:
 
           echo "Selected tunnel option: [ $TUNNEL ]"
 
+      - name: Setup Release Environment
+        id: setuprelease
+        run: |
+          BASE="${RELEASE_BRANCH%:*}"
+          BRANCH="${RELEASE_BRANCH#*:}"
+          # Set date variables
+          echo "DATE=$(date +'%d%m%Y')" >> $GITHUB_ENV
+          echo "DATETIME=$(date +'%d.%m.%Y-%H:%M:%S')" >> $GITHUB_ENV
+          echo "DATEMONTH=$(date +"%B-%Y" | awk '{print tolower($0)}')" >> $GITHUB_ENV
+
+          if [ "${BASE}" == "openwrt" ]; then
+            echo "RELEASE_NAME=RTA-WRT_ULO-OpenWRT-${BRANCH}-${DATE}" >> $GITHUB_ENV
+            echo "RELEASE_TAG=rtawrt-ulo-openwrt-${BRANCH}-${DATE}" >> $GITHUB_ENV
+          else
+            echo "RELEASE_NAME=RTA-WRT_ULO-ImmortalWRT-${BRANCH}-${DATE}" >> $GITHUB_ENV
+            echo "RELEASE_TAG=rtawrt-ulo-immortalwrt-${BRANCH}-${DATE}" >> $GITHUB_ENV
+          fi
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        if: steps.setuprelease.outputs.status == 'success'
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_NAME }}
+          prerelease: ${{ github.ref_name == 'dev' }}
+          body: |
+            # 🚀 RTA-WRT - Release Information
+
+            ## 📥 Download Statistics
+            ![GitHub Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ env.RELEASE_TAG }}/total?style=for-the-badge&logo=Openwrt)
+
+            ## 📢 Support Channels
+            [![Channel](https://img.shields.io/badge/Telegram-Channel-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/rtawrt) [![Group](https://img.shields.io/badge/Telegram-Group-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/backup_rtawrt) [![Personal](https://img.shields.io/badge/Telegram-Personal-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/RizkiKotet)
+
+            ## NOTES
+            `Amlogic s905x Support Mod SDCard`
+
+            ## 📝 Changelog Firmware
+            [**Changelog Firmware**](https://github.com/rizkikotet-dev/RTA-WRT/blob/main/CHANGELOG.md "**Changelog Firmware**")
+          generate_release_notes: true
+
   build-firmware:
-    name: Build ${{ matrix.target }}-${{ matrix.tunnel }}
+    name: Build ${{ matrix.target }} Firmware
     needs: prebuild
     runs-on: ubuntu-22.04
     strategy:
@@ -171,12 +215,15 @@ jobs:
           case "$MATRIXTARGET" in
             h5-*|h616-*|h618-*|h6-*)
                 KERNEL="6.1.31-AW64-DBAI"
+                echo "KERNEL=$KERNEL" >> $GITHUB_ENV
                 ;;
             s905*)
                 KERNEL="6.1.66-DBAI"
+                echo "KERNEL=$KERNEL" >> $GITHUB_ENV
                 ;;
             rk*)
                 KERNEL="5.10.160-rk35v-dbai"
+                echo "KERNEL=$KERNEL" >> $GITHUB_ENV
                 ;;
           esac
 
@@ -189,11 +236,6 @@ jobs:
           echo "BRANCH=$BRANCH" >> $GITHUB_ENV
           echo "VEROP=$VEROP" >> $GITHUB_ENV
           echo "DOWNLOAD_BASE=https://downloads.${BASE}.org" >> $GITHUB_ENV
-
-          # Set date variables
-          echo "DATE=$(date +'%d%m%Y')" >> $GITHUB_ENV
-          echo "DATETIME=$(date +'%d.%m.%Y-%H:%M:%S')" >> $GITHUB_ENV
-          echo "DATEMONTH=$(date +"%B-%Y" | awk '{print tolower($0)}')" >> $GITHUB_ENV
 
           echo "status=success" >> $GITHUB_OUTPUT
 
@@ -303,21 +345,34 @@ jobs:
           ./scripts/MODSDCARD.sh
           echo "status=success" >> $GITHUB_OUTPUT
 
-      - name: Create Release
+      - name: Before Upload
+        id: beforeupload
         if: steps.modsdcard.outputs.status == 'success'
+        run: |
+          cd ${{ env.WORKING_DIR }}
+          for file in "${{ env.WORKING_DIR }}"/compiled_images/*.img.gz; do
+            if [ -f "$file" ]; then
+              new_name="RTA-WRT_$(basename "$file" .img.gz)_${TUNNEL}.img.gz"
+              mv "$file" compiled_images/$new_name
+            fi
+          done
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        if: steps.beforeupload.outputs.status == 'success'
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "rtawrt-ulo-${{ env.BASE }}-${{ env.BRANCH }}-${{ env.DATE }}"
-          name: RTA-WRT-ULO-${{ env.BASE }}-${{ env.BRANCH }}-${{ env.DATE }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_NAME }}
           files: ${{ env.WORKING_DIR }}/compiled_images/*.img.gz
           prerelease: ${{ github.ref_name == 'dev' }}
           body: |
             # 🚀 RTA-WRT - Release Information
 
             ## 📥 Download Statistics
-            ![GitHub Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/rtawrt-ulo-${{ env.BASE }}-${{ env.BRANCH }}-${{ env.DATE }}/total?style=for-the-badge&logo=Openwrt)
+            ![GitHub Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ env.RELEASE_TAG }}/total?style=for-the-badge&logo=Openwrt)
 
             ## 📢 Support Channels
             [![Channel](https://img.shields.io/badge/Telegram-Channel-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/rtawrt) [![Group](https://img.shields.io/badge/Telegram-Group-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/backup_rtawrt) [![Personal](https://img.shields.io/badge/Telegram-Personal-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/RizkiKotet)
