@@ -120,12 +120,16 @@ jobs:
       - name: Setup Release Environment
         id: setuprelease
         run: |
+          sudo timedatectl set-timezone "${TZ}"
           BASE="${RELEASE_BRANCH%:*}"
           BRANCH="${RELEASE_BRANCH#*:}"
+          DATE=$(date +'%d%m%Y')
+          DATETIME=$(date +'%d.%m.%Y-%H:%M:%S')
+          DATEMONTH=$(date +"%B-%Y" | awk '{print tolower($0)}')
           # Set date variables
-          echo "DATE=$(date +'%d%m%Y')" >> $GITHUB_ENV
-          echo "DATETIME=$(date +'%d.%m.%Y-%H:%M:%S')" >> $GITHUB_ENV
-          echo "DATEMONTH=$(date +"%B-%Y" | awk '{print tolower($0)}')" >> $GITHUB_ENV
+          echo "DATE=$DATE" >> $GITHUB_ENV
+          echo "DATETIME=$DATETIME" >> $GITHUB_ENV
+          echo "DATEMONTH=$DATEMONTH" >> $GITHUB_ENV
 
           if [ "${BASE}" == "openwrt" ]; then
             echo "RELEASE_NAME=RTA-WRT_ULO-OpenWRT-${BRANCH}-${DATE}" >> $GITHUB_ENV
@@ -375,7 +379,9 @@ jobs:
             ![GitHub Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ env.RELEASE_TAG }}/total?style=for-the-badge&logo=Openwrt)
 
             ## 📢 Support Channels
-            [![Channel](https://img.shields.io/badge/Telegram-Channel-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/rtawrt) [![Group](https://img.shields.io/badge/Telegram-Group-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/backup_rtawrt) [![Personal](https://img.shields.io/badge/Telegram-Personal-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/RizkiKotet)
+            [![Channel](https://img.shields.io/badge/Telegram-Channel-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/rtawrt)
+            [![Group](https://img.shields.io/badge/Telegram-Group-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/backup_rtawrt)
+            [![Personal](https://img.shields.io/badge/Telegram-Personal-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/RizkiKotet)
 
             ## NOTES
             `Amlogic s905x Support Mod SDCard`
