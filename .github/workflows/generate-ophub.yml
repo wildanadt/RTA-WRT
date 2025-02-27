@@ -75,6 +75,16 @@ jobs:
     name: ${{ inputs.release_branch }}
     outputs:
       target: ${{ steps.set-matrix.outputs.target }}
+      type: ${{ steps.setuprelease.outputs.type }}
+      base: ${{ steps.setuprelease.outputs.base }}
+      branch: ${{ steps.setuprelease.outputs.branch }}
+      verop: ${{ steps.setuprelease.outputs.verop }}
+      download_base: ${{ steps.setuprelease.outputs.download_base }}
+      date: ${{ steps.setuprelease.outputs.date }}
+      datetime: ${{ steps.setuprelease.outputs.datetime }}
+      datemonth: ${{ steps.setuprelease.outputs.datemonth }}
+      release_name: ${{ steps.setuprelease.outputs.release_name }}
+      release_tag: ${{ steps.setuprelease.outputs.release_tag }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -125,22 +135,33 @@ jobs:
         id: setuprelease
         run: |
           sudo timedatectl set-timezone "${TZ}"
+
+          TYPE="ULO"
+          echo "TYPE=$TYPE" >> $GITHUB_OUTPUT
+
           BASE="${RELEASE_BRANCH%:*}"
           BRANCH="${RELEASE_BRANCH#*:}"
+          VEROP="$(echo "${BRANCH}" | awk -F. '{print $1"."$2}')"
+
+          echo "BASE=$BASE" >> $GITHUB_OUTPUT
+          echo "BRANCH=$BRANCH" >> $GITHUB_OUTPUT
+          echo "VEROP=$VEROP" >> $GITHUB_OUTPUT
+          echo "DOWNLOAD_BASE=https://downloads.${BASE}.org" >> $GITHUB_OUTPUT
+
           DATE=$(date +'%d%m%Y')
           DATETIME=$(date +'%d.%m.%Y-%H:%M:%S')
           DATEMONTH=$(date +"%B-%Y" | awk '{print tolower($0)}')
-          # Set date variables
-          echo "DATE=$DATE" >> $GITHUB_ENV
-          echo "DATETIME=$DATETIME" >> $GITHUB_ENV
-          echo "DATEMONTH=$DATEMONTH" >> $GITHUB_ENV
+
+          echo "DATE=$DATE" >> $GITHUB_OUTPUT
+          echo "DATETIME=$DATETIME" >> $GITHUB_OUTPUT
+          echo "DATEMONTH=$DATEMONTH" >> $GITHUB_OUTPUT
 
           if [ "${BASE}" == "openwrt" ]; then
-            echo "RELEASE_NAME=RTA-WRT_OPHUB-OpenWRT-${BRANCH}-${DATE}" >> $GITHUB_ENV
-            echo "RELEASE_TAG=rtawrt-ophub-openwrt-${BRANCH}-${DATE}" >> $GITHUB_ENV
+            echo "RELEASE_NAME=RTA-WRT_OPHUB-OpenWRT-${BRANCH}-${DATE}" >> $GITHUB_OUTPUT
+            echo "RELEASE_TAG=rtawrt-ophub-openwrt-${BRANCH}-${DATE}" >> $GITHUB_OUTPUT
           else
-            echo "RELEASE_NAME=RTA-WRT_OPHUB-ImmortalWRT-${BRANCH}-${DATE}" >> $GITHUB_ENV
-            echo "RELEASE_TAG=rtawrt-ophub-immortalwrt-${BRANCH}-${DATE}" >> $GITHUB_ENV
+            echo "RELEASE_NAME=RTA-WRT_OPHUB-ImmortalWRT-${BRANCH}-${DATE}" >> $GITHUB_OUTPUT
+            echo "RELEASE_TAG=rtawrt-ophub-immortalwrt-${BRANCH}-${DATE}" >> $GITHUB_OUTPUT
           fi
           echo "status=success" >> $GITHUB_OUTPUT
 
@@ -150,14 +171,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          name: ${{ env.RELEASE_NAME }}
+          tag_name: ${RELEASE_TAG}
+          name: ${RELEASE_NAME}
           prerelease: ${{ github.ref_name == 'dev' }}
           body: |
             # 🚀 RTA-WRT - Release Information
 
             ## 📥 Download Statistics
-            ![GitHub Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ env.RELEASE_TAG }}/total?style=for-the-badge&logo=Openwrt)
+            ![GitHub Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${RELEASE_TAG}/total?style=for-the-badge&logo=Openwrt)
 
             ## 📢 Support Channels
             [![Channel](https://img.shields.io/badge/Telegram-Channel-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/rtawrt)
@@ -175,6 +196,17 @@ jobs:
     name: Build ${{ matrix.target }} Firmware
     needs: prebuild
     runs-on: ubuntu-22.04
+    env:
+      TYPE: ${{ needs.prebuild.outputs.type }}
+      BASE: ${{ needs.prebuild.outputs.base }}
+      BRANCH: ${{ needs.prebuild.outputs.branch }}
+      VEROP: ${{ needs.prebuild.outputs.verop }}
+      DOWNLOAD_BASE: ${{ needs.prebuild.outputs.download_base }}
+      DATE: ${{ needs.prebuild.outputs.date }}
+      DATETIME: ${{ needs.prebuild.outputs.datetime }}
+      DATEMONTH: ${{ needs.prebuild.outputs.datemonth }}
+      RELEASE_NAME: ${{ needs.prebuild.outputs.release_name }}
+      RELEASE_TAG: ${{ needs.prebuild.outputs.release_tag }}
     strategy:
       fail-fast: false
       matrix:
@@ -209,8 +241,6 @@ jobs:
       - name: Setup Build Variables
         id: variables
         run: |
-          TYPE="AMLOGIC"
-          echo "TYPE=$TYPE" >> $GITHUB_ENV
           MATRIXTARGET="${{ matrix.target }}"
           echo "MATRIXTARGET=$MATRIXTARGET" >> $GITHUB_ENV
 
@@ -225,16 +255,6 @@ jobs:
           KERNEL="5.15.y_6.1.y"
           echo "KERNEL=$KERNEL" >> $GITHUB_ENV
 
-          # Set base distribution info
-          BASE="${RELEASE_BRANCH%:*}"
-          BRANCH="${RELEASE_BRANCH#*:}"
-          VEROP="$(echo "${BRANCH}" | awk -F. '{print $1"."$2}')"
-
-          echo "BASE=$BASE" >> $GITHUB_ENV
-          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
-          echo "VEROP=$VEROP" >> $GITHUB_ENV
-          echo "DOWNLOAD_BASE=https://downloads.${BASE}.org" >> $GITHUB_ENV
-
           echo "status=success" >> $GITHUB_OUTPUT
 
       - name: Download and Prepare Image Builder
@@ -242,11 +262,11 @@ jobs:
         if: steps.variables.outputs.status == 'success'
         run: |
           # Determine archive extension based on version
-          CURVER=$(echo "${{ env.BRANCH }}" | cut -d'.' -f1)
+          CURVER=$(echo "${BRANCH}" | cut -d'.' -f1)
           archive_ext=$([ "${CURVER}" == "24" ] && echo "tar.zst" || echo "tar.xz")
 
           # Download image builder
-          RELEASE="${{ env.DOWNLOAD_BASE }}/releases/${{ env.BRANCH }}/targets/${{ env.TARGET_SYSTEM }}/${{ env.BASE }}-imagebuilder-${{ env.BRANCH }}-${{ env.TARGET_NAME }}.Linux-x86_64.${archive_ext}"
+          RELEASE="${DOWNLOAD_BASE}/releases/${BRANCH}/targets/${TARGET_SYSTEM}/${BASE}-imagebuilder-${BRANCH}-${TARGET_NAME}.Linux-x86_64.${archive_ext}"
           echo "Downloading from: $RELEASE"
           wget --progress=dot:giga "$RELEASE"
 
@@ -261,8 +281,8 @@ jobs:
           esac
 
           # Setup working directory
-          mv *-imagebuilder-* ${{ env.WORKING_DIR }}
-          cp -r $GITHUB_WORKSPACE/origin/* $GITHUB_WORKSPACE/${{ env.WORKING_DIR }}
+          mv *-imagebuilder-* ${WORKING_DIR}
+          cp -r $GITHUB_WORKSPACE/origin/* $GITHUB_WORKSPACE/${WORKING_DIR}
 
           echo "status=success" >> $GITHUB_OUTPUT
 
@@ -270,7 +290,7 @@ jobs:
         id: packages
         if: steps.download.outputs.status == 'success'
         run: |
-          cd ${{ env.WORKING_DIR }}
+          cd ${WORKING_DIR}
           chmod +x scripts/PACKAGES.sh
           ./scripts/PACKAGES.sh
 
@@ -280,7 +300,7 @@ jobs:
         id: customize
         if: steps.packages.outputs.status == 'success'
         run: |
-          cd ${{ env.WORKING_DIR }}
+          cd ${WORKING_DIR}
 
           # Apply patches
           chmod +x scripts/PATCH.sh
@@ -301,20 +321,20 @@ jobs:
         id: build
         if: steps.customize.outputs.status == 'success'
         run: |
-          cd ${{ env.WORKING_DIR }}
+          cd ${WORKING_DIR}
           mkdir -p compiled_images
           chmod +x make-image.sh
 
           # Clean if requested
-          if [ "${{ env.CLEAN }}" == "true" ]; then
+          if [ "${CLEAN}" == "true" ]; then
             make clean
           fi
             
           # Build image
-          time ./make-image.sh ${{ env.PROFILE }} $TUNNEL
+          time ./make-image.sh ${PROFILE} $TUNNEL
             
           # Move and rename output files
-          for file in bin/targets/"${{ env.TARGET_SYSTEM }}"/*-rootfs.tar.gz; do
+          for file in bin/targets/"${TARGET_SYSTEM}"/*-rootfs.tar.gz; do
             if [ -f "$file" ]; then
               new_name="RTA-WRT_$(basename "$file" -rootfs.tar.gz)_${TUNNEL}-rootfs.tar.gz"
               mv "$file" compiled_images/$new_name
@@ -329,7 +349,7 @@ jobs:
         id: repack
         if: steps.build.outputs.status == 'success'
         run: |
-          cd ${{ env.WORKING_DIR }}
+          cd ${WORKING_DIR}
           chmod +x scripts/REPACKWRT.sh
           ./scripts/REPACKWRT.sh "ophub" "$MATRIXTARGET" "$KERNEL" "$TUNNEL"
           echo "status=success" >> $GITHUB_OUTPUT
@@ -338,7 +358,7 @@ jobs:
         id: modsdcard
         if: steps.repack.outputs.status == 'success'
         run: |
-          cd ${{ env.WORKING_DIR }}
+          cd ${WORKING_DIR}
           chmod +x scripts/MODSDCARD.sh
           ./scripts/MODSDCARD.sh
           echo "status=success" >> $GITHUB_OUTPUT
@@ -347,8 +367,8 @@ jobs:
         id: beforeupload
         if: steps.modsdcard.outputs.status == 'success'
         run: |
-          cd ${{ env.WORKING_DIR }}
-          for file in "${{ env.WORKING_DIR }}"/compiled_images/*.img.gz; do
+          cd ${WORKING_DIR}
+          for file in "${WORKING_DIR}"/compiled_images/*.img.gz; do
             if [ -f "$file" ]; then
               new_name="RTA-WRT_$(basename "$file" .img.gz)_${TUNNEL}.img.gz"
               mv "$file" compiled_images/$new_name
@@ -362,7 +382,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          name: ${{ env.RELEASE_NAME }}
-          files: ${{ env.WORKING_DIR }}/compiled_images/*.img.gz
+          tag_name: ${RELEASE_TAG}
+          name: ${RELEASE_NAME}
+          files: ${WORKING_DIR}/compiled_images/*.img.gz
           prerelease: ${{ github.ref_name == 'dev' }}

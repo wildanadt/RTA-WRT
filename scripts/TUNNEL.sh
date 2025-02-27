@@ -3,7 +3,7 @@
 . ./scripts/INCLUDE.sh
 
 # openclash_core URL generation
-if [[ "$ARCH_3" == "x86_64" ]]; then
+if [[ "${ARCH_3}" == "x86_64" ]]; then
     meta_file="mihomo-linux-${ARCH_1}-compatible"
 else
     meta_file="mihomo-linux-${ARCH_1}"
@@ -19,8 +19,8 @@ nikki_file_ipk="nikki_${ARCH_3}-openwrt-${VEROP}"
 nikki_file_ipk_down=$(curl -s "https://api.github.com/repos/rizkikotet-dev/OpenWrt-nikki-Mod/releases" | grep "browser_download_url" | grep -oE "https.*${nikki_file_ipk}.*.tar.gz" | head -n 1)
 
 # Package repositories
-declare -a openclash_ipk=("luci-app-openclash|https://downloads.immortalwrt.org/releases/packages-$VEROP/$ARCH_3/luci")
-declare -a passwall_ipk=("luci-app-passwall|https://downloads.immortalwrt.org/releases/packages-$VEROP/$ARCH_3/luci")
+declare -a openclash_ipk=("luci-app-openclash|https://downloads.immortalwrt.org/releases/packages-${VEROP}/${ARCH_3}/luci")
+declare -a passwall_ipk=("luci-app-passwall|https://downloads.immortalwrt.org/releases/packages-${VEROP}/${ARCH_3}/luci")
 
 # Function to download and setup OpenClash
 setup_openclash() {
