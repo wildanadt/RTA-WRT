@@ -20,26 +20,26 @@ on:
         type: choice
         options:
           - all-device
-          - s905
-          - s905-beelink-mini
-          - s905-mxqpro-plus
-          - s905w
-          - s905w-w95
-          - s905w-x96-mini
-          - s905w-x96w
-          - s905x
-          - s905x-b860h
-          - s905x-nexbox-a95x
-          - s905x2
-          - s905x2-km3
-          - s905x2-x96max-2g
-          - s905x3
-          - s905x3-h96max
-          - s905x3-hk1
-          - s905x3-x96max
-          - s912
-          - s912-h96pro-plus
-          - s912-x92
+          - Amlogic s905
+          - Amlogic s905 Beelink Mini
+          - Amlogic s905 MXQ Pro Plus
+          - Amlogic s905W
+          - Amlogic s905W W95
+          - Amlogic s905W X96 Mini
+          - Amlogic s905W X96W
+          - Amlogic s905X HG680P
+          - Amlogic s905X B860H
+          - Amlogic s905X Nexbox A95X
+          - Amlogic s905X2
+          - Amlogic s905X2 KM3
+          - Amlogic s905X2 X96 Max 2G
+          - Amlogic s905X3
+          - Amlogic s905X3 H96 Max
+          - Amlogic s905X3 HK1
+          - Amlogic s905X3 X96 Max
+          - Amlogic s912
+          - Amlogic s912 H96 Pro Plus
+          - Amlogic s912 X92
       tunnel:
         description: "Select VPN Client app:"
         required: true
@@ -64,27 +64,27 @@ env:
   TZ: Asia/Jakarta
   WORKING_DIR: imagebuilder
   DEBIAN_FRONTEND: noninteractive
-  RELEASE_BRANCH: ${{ inputs.release_branch }}
-  TARGET: ${{ inputs.target }}
-  TUNNEL: ${{ inputs.tunnel }}
-  CLEAN: ${{ inputs.clean }}
+  RELEASE_BRANCH: ${{ github.event.inputs.release_branch }}
+  TARGET: ${{ github.event.inputs.target }}
+  TUNNEL: ${{ github.event.inputs.tunnel }}
+  CLEAN: ${{ github.event.inputs.clean }}
 
 jobs:
   prebuild:
     runs-on: ubuntu-22.04
-    name: ${{ inputs.release_branch }}
+    name: ${{ github.event.inputs.release_branch }}
     outputs:
       target: ${{ steps.set-matrix.outputs.target }}
-      type: ${{ steps.setuprelease.outputs.type }}
-      base: ${{ steps.setuprelease.outputs.base }}
-      branch: ${{ steps.setuprelease.outputs.branch }}
-      verop: ${{ steps.setuprelease.outputs.verop }}
-      download_base: ${{ steps.setuprelease.outputs.download_base }}
-      date: ${{ steps.setuprelease.outputs.date }}
-      datetime: ${{ steps.setuprelease.outputs.datetime }}
-      datemonth: ${{ steps.setuprelease.outputs.datemonth }}
-      release_name: ${{ steps.setuprelease.outputs.release_name }}
-      release_tag: ${{ steps.setuprelease.outputs.release_tag }}
+      type: ${{ steps.setupenv.outputs.type }}
+      base: ${{ steps.setupenv.outputs.base }}
+      branch: ${{ steps.setupenv.outputs.branch }}
+      verop: ${{ steps.setupenv.outputs.verop }}
+      download_base: ${{ steps.setupenv.outputs.download_base }}
+      date: ${{ steps.setupenv.outputs.date }}
+      datetime: ${{ steps.setupenv.outputs.datetime }}
+      datemonth: ${{ steps.setupenv.outputs.datemonth }}
+      release_name: ${{ steps.setupenv.outputs.release_name }}
+      release_tag: ${{ steps.setupenv.outputs.release_tag }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -94,45 +94,45 @@ jobs:
       - name: Set Matrix Run
         id: set-matrix
         run: |
-          echo "Selected target option: [ ${{ inputs.target }} ]"
+          echo "Selected target option: [ ${{ github.event.inputs.target }} ]"
           TARGET_JSON=$(cat << 'EOJ'
           {
             "target": [
-              "s905",
-              "s905-beelink-mini",
-              "s905-mxqpro-plus",
-              "s905w",
-              "s905w-w95",
-              "s905w-x96-mini",
-              "s905w-x96w",
-              "s905x",
-              "s905x-b860h",
-              "s905x-nexbox-a95x",
-              "s905x2",
-              "s905x2-km3",
-              "s905x2-x96max-2g",
-              "s905x3",
-              "s905x3-h96max",
-              "s905x3-hk1",
-              "s905x3-x96max",
-              "s912",
-              "s912-h96pro-plus",
-              "s912-x92"
+              "Amlogic s905"
+              "Amlogic s905 Beelink Mini"
+              "Amlogic s905 MXQ Pro Plus"
+              "Amlogic s905W"
+              "Amlogic s905W W95"
+              "Amlogic s905W X96 Mini"
+              "Amlogic s905W X96W"
+              "Amlogic s905X HG680P"
+              "Amlogic s905X B860H"
+              "Amlogic s905X Nexbox A95X"
+              "Amlogic s905X2"
+              "Amlogic s905X2 KM3"
+              "Amlogic s905X2 X96 Max 2G"
+              "Amlogic s905X3"
+              "Amlogic s905X3 H96 Max"
+              "Amlogic s905X3 HK1"
+              "Amlogic s905X3 X96 Max"
+              "Amlogic s912"
+              "Amlogic s912 H96 Pro Plus"
+              "Amlogic s912 X92"
             ]
           }
           EOJ
           )
 
-          if [ "${{ inputs.target }}" == "all-device" ]; then
+          if [ "${{ github.event.inputs.target }}" == "all-device" ]; then
             echo "target=$(echo "$TARGET_JSON" | jq -c '.target')" >> $GITHUB_OUTPUT
           else
-            echo "target=$(jq -nc --arg d "${{ inputs.target }}" '[$d]')" >> $GITHUB_OUTPUT
+            echo "target=$(jq -nc --arg d "${{ github.event.inputs.target }}" '[$d]')" >> $GITHUB_OUTPUT
           fi
 
-          echo "Selected tunnel option: [ ${{ inputs.tunnel }} ]"
+          echo "Selected tunnel option: [ ${{ github.event.inputs.tunnel }} ]"
 
       - name: Setup Release Environment
-        id: setuprelease
+        id: setupenv
         run: |
           sudo timedatectl set-timezone "${{ env.TZ }}"
 
@@ -170,19 +170,19 @@ jobs:
           echo "status=success" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        if: steps.setuprelease.outputs.status == 'success'
+        if: steps.setupenv.outputs.status == 'success'
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.setuprelease.outputs.release_tag }}
-          name: ${{ steps.setuprelease.outputs.release_name }}
+          tag_name: ${{ steps.setupenv.outputs.release_tag }}
+          name: ${{ steps.setupenv.outputs.release_name }}
           prerelease: ${{ github.ref_name == 'dev' }}
           body: |
             # 🚀 RTA-WRT - Release Information
 
             ## 📥 Download Statistics
-            ![GitHub Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ steps.setuprelease.outputs.release_tag }}/total?style=for-the-badge&logo=Openwrt)
+            ![GitHub Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ steps.setupenv.outputs.release_tag }}/total?style=for-the-badge&logo=Openwrt)
 
             ## 📢 Support Channels
             [![Channel](https://img.shields.io/badge/Telegram-Channel-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/rtawrt)
@@ -248,6 +248,20 @@ jobs:
           MATRIXTARGET="${{ matrix.target }}"
           echo "MATRIXTARGET=$MATRIXTARGET" >> $GITHUB_ENV
 
+          NAMA_MODIFIED=$(echo $MATRIXTARGET | sed 's/ /-/g')
+          echo "NAMA_MODIFIED=$NAMA_MODIFIED" >> $GITHUB_ENV
+
+          case $BASE in
+            openwrt)
+              OP_BASE="OpenWrt"
+              echo "OP_BASE=$OP_BASE" >> $GITHUB_ENV
+              ;;
+            immortalwrt)
+              OP_BASE="ImmortalWrt"
+              echo "OP_BASE=$OP_BASE" >> $GITHUB_ENV
+              ;;
+          esac
+
           # Target system configurations
           echo "PROFILE=generic" >> $GITHUB_ENV
           echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
@@ -256,8 +270,128 @@ jobs:
           echo "ARCH_2=aarch64" >> $GITHUB_ENV
           echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
 
-          KERNEL="5.15.y_6.1.y"
-          echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+          case "$MATRIXTARGET" in
+            Amlogic s905)
+              TARGET_BUILD="s905"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s905 Beelink Mini)
+              TARGET_BUILD="s905-beelink-mini"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s905 MXQ Pro Plus)
+              TARGET_BUILD="s905-mxqpro-plus"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s905W)
+              TARGET_BUILD="s905w"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s905W W95)
+              TARGET_BUILD="s905w-w95"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s905W X96 Mini)
+              TARGET_BUILD="s905w-x96-mini"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s905W X96W)
+              TARGET_BUILD="s905w-x96w"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s905X HG680P)
+              TARGET_BUILD="s905x"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s905X B860H)
+              TARGET_BUILD="s905x-b860h"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s905X Nexbox A95X)
+              TARGET_BUILD="s905x-nexbox-a95x"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s905X2)
+              TARGET_BUILD="s905x2"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s905X2 KM3)
+              TARGET_BUILD="s905x2-km3"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s905X2 X96 Max 2G)
+              TARGET_BUILD="s905x2-x96max-2g"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s905X3)
+              TARGET_BUILD="s905x3"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s905X3 H96 Max)
+              TARGET_BUILD="s905x3-h96max"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s905X3 HK1)
+              TARGET_BUILD="s905x3-hk1"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s905X3 X96 Max)
+              TARGET_BUILD="s905x3-x96max"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s912)
+              TARGET_BUILD="s912"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s912 H96 Pro Plus)
+              TARGET_BUILD="s912-h96pro-plus"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+            Amlogic s912 X92)
+              TARGET_BUILD="s912-x92"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              ;;
+          esac
 
           echo "status=success" >> $GITHUB_OUTPUT
 
@@ -355,7 +489,7 @@ jobs:
         run: |
           cd ${WORKING_DIR}
           chmod +x scripts/REPACKWRT.sh
-          ./scripts/REPACKWRT.sh "ophub" "$MATRIXTARGET" "$KERNEL" "${{ env.TUNNEL }}"
+          ./scripts/REPACKWRT.sh "ophub" "$TARGET_BUILD" "$KERNEL" "${{ env.TUNNEL }}"
           echo "status=success" >> $GITHUB_OUTPUT
 
       - name: Mod SDCard
@@ -372,16 +506,8 @@ jobs:
         if: steps.modsdcard.outputs.status == 'success'
         run: |
           cd ${{ env.WORKING_DIR }}
-          for file in compiled_images/*.img.gz; do
-            if [ -f "$file" ]; then
-              base_name=$(basename "$file" .img.gz)
-              new_name="RTA-WRT_${base_name}_${{ env.TUNNEL }}.img.gz"
-              mv "$file" "compiled_images/${new_name}"
-            else
-              echo "No image files found in compiled_images directory"
-              exit 1
-            fi
-          done
+          chmod +x scripts/RENAMEFW.sh
+          ./scripts/RENAMEFW.sh
           echo "status=success" >> "$GITHUB_OUTPUT"
 
       - name: Create Release
@@ -394,3 +520,117 @@ jobs:
           name: ${{ env.RELEASE_NAME }}
           files: ${{ env.WORKING_DIR }}/compiled_images/*.img.gz
           prerelease: ${{ github.ref_name == 'dev' }}
+
+      - name: Generate file download links
+        run: |
+          RELEASE_URL="https://github.com/rizkikotet-dev/RTA-WRT/releases/download/${{ env.RELEASE_TAG }}"
+          ls ${{ env.WORKING_DIR }}/compiled_images/*.img.gz | while read -r file; do
+            filename=$(basename "$file")
+            echo "$MATRIXTARGET|$RELEASE_URL/$filename" >> artifacts.txt
+          done
+
+      - name: Upload file links as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-links-${{ matrix.target }}
+          path: artifacts.txt
+
+  notify:
+    name: Notify Release
+    needs: [prebuild, build-firmware]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download file links as artifact
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Combine artifacts
+        run: |
+          cat artifacts/*/artifacts.txt > combined_artifacts.txt
+
+      - name: Telegram Notification
+        run: |
+          BOT_TOKEN="${{ secrets.BOT_TOKEN }}"
+          CHAT_ID="${{ secrets.CHAT_ID }}"
+          THREAD_ID="734"
+
+          # Build parameters
+          BUILD="${{ needs.prebuild.outputs.type }}"
+          SOURCE="${{ needs.prebuild.outputs.base }}"
+          VERSION="${{ needs.prebuild.outputs.branch }}"
+          BUILD_TYPE="${{ env.TUNNEL }}"
+          FOR="${{ github.ref_name }}"
+
+          # Set image URL based on source
+          if [ "$SOURCE" = "immortalwrt" ]; then
+              image_url="https://avatars.githubusercontent.com/u/53193414?s=200&v=4"
+          else
+              image_url="https://avatars.githubusercontent.com/u/2528830?s=200&v=4"
+          fi
+
+          # Generate message based on branch
+          if [ "$FOR" = "main" ]; then
+              message="━━━━━━━━━━━━━━━━━━━━━━
+          🎯 *RTA-WRT Firmware Update*
+          ✅ _Stable Release_
+
+          🔹 *Build:* ${BUILD}
+          🔹 *Version:* ${SOURCE}:${VERSION}
+          🔹 *Date:* $(date '+%d-%m-%Y %H:%M:%S')
+          🔹 *Build Type:* ${BUILD_TYPE}
+
+          📌 *Release Notes:*
+          • Stable version release
+          • Recommended for all users
+          • Includes latest features and bug fixes
+          ━━━━━━━━━━━━━━━━━━━━━━"
+          else
+              message="━━━━━━━━━━━━━━━━━━━━━━
+          🚀 *RTA-WRT Firmware Update*
+          🌟 _Development Release_
+
+          🔹 *Build:* ${BUILD}
+          🔹 *Version:* ${SOURCE}:${VERSION}
+          🔹 *Date:* $(date '+%d-%m-%Y %H:%M:%S')
+          🔹 *Build Type:* ${BUILD_TYPE}
+
+          📌 *Development Notes:*
+          • Suitable for testing
+          • Please provide feedback
+          • Report any bugs found
+          • Your feedback helps development
+          ━━━━━━━━━━━━━━━━━━━━━━"
+          fi
+
+          # Read the target names from the prebuild output
+          TARGET_NAMES='${{ fromJSON(needs.prebuild.outputs.target) }}'
+
+          BUTTONS='[]'
+          if [ -f "combined_artifacts.txt" ]; then
+              # Skip header dan proses setiap line
+              tail -n +2 combined_artifacts.txt | while IFS='|' read -r target_name file_url; do
+                  # Bersihkan whitespace berlebih
+                  target_name=$(echo "$target_name" | xargs)
+                  file_url=$(echo "$file_url" | xargs)
+                  
+                  # Tambahkan tombol
+                  BUTTONS=$(echo "$BUTTONS" | jq --arg name "$target_name" --arg url "$file_url" \
+                      '. += [[{"text": "📥 \($name)", "url": $url}]]')
+              done
+          fi
+
+          # Add a button to view the release
+          BUTTONS=$(echo "$BUTTONS" | jq '. += [[{"text": "🔗 View Release", "url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/tag/${{ needs.prebuild.outputs.release_tag }}"}]]')
+
+          # Send message with photo
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto" \
+              -d "chat_id=${CHAT_ID}" \
+              -d "photo=${image_url}" \
+              -d "caption=${message}" \
+              -d "parse_mode=Markdown" \
+              -d "message_thread_id=${THREAD_ID}" \
+              -d "reply_markup={\"inline_keyboard\":$BUTTONS}"
+
+          # Clean up
+          rm -f combined_artifacts.txt
