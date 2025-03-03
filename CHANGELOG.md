@@ -1,5 +1,10 @@
 # What's New!
 
+**Changelog Firmware** (03-03-2025)
+
+- Add support for new hardware components
+- Add luci-app-droidmodem
+
 **Changelog Firmware** (02-03-2025)
 
 - Update Nikki to v1.19.5
