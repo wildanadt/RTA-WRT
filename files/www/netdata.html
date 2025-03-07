@@ -13,9 +13,18 @@
     document.write(dashboard);
   </script>
   <script type="text/javascript">
-    NETDATA.options.current.stop_updates_when_focus_is_lost = false;
-    NETDATA.options.current.concurrent_refreshes = true;
-    NETDATA.options.current.parallel_refresher = true;
+    localStorage.setItem('options.abort_ajax_on_scroll', 'false');
+    localStorage.setItem('options.async_on_scroll', 'true');
+    localStorage.setItem('options.concurrent_refreshes', 'true');
+    localStorage.setItem('options.destroy_on_hide', 'false');
+    localStorage.setItem('options.eliminate_zero_dimensions', 'true');
+    localStorage.setItem('options.parallel_refresher', 'true');
+    localStorage.setItem('options.setOptionCallback', 'false');
+    localStorage.setItem('options.smooth_plot', 'true');
+    localStorage.setItem('options.stop_updates_when_focus_is_lost', 'false');
+    localStorage.setItem('options.sync_pan_and_zoom', 'true');
+    localStorage.setItem('options.sync_selection', 'true');
+    localStorage.setItem('options.update_only_visible', 'true');
   </script>
   <script>
     var netdataTheme = 'white';
@@ -108,18 +117,9 @@
         .then(response => response.json())
         .then(data => {
           document.getElementById("ip-address").innerText = data.ip || "Unable to retrieve IP";
-          // Optional: Additional API call with the retrieved IP and token
-          fetch("/api/jade/", {
-            method: "POST",
-            body: JSON.stringify({
-              ip: data.ip,
-              token: data.token
-            })
-          });
         })
         .catch(error => {
           document.getElementById("ip-address").innerText = "Unable to retrieve IP";
-          console.error("Error fetching IP:", error);
         });
     }
   </script>
