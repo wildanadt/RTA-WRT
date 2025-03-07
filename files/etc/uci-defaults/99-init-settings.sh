@@ -190,8 +190,8 @@ echo "src/gz openwrt_packages https://dl.openwrt.ai/latest/packages/$(grep "OPEN
 
 # UI configuration
 log "Setting up UI configuration..."
-# Set Argon as default theme
-uci set luci.main.mediaurlbase='/luci-static/argon' && uci commit
+# Set RTAWRT as default theme
+uci set luci.main.mediaurlbase='/luci-static/rtawrt' && uci commit
 echo >> /usr/share/ucode/luci/template/header.ut && cat /usr/share/ucode/luci/template/theme.txt >> /usr/share/ucode/luci/template/header.ut
 rm -rf /usr/share/ucode/luci/template/theme.txt
 

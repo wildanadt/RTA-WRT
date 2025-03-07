@@ -87,7 +87,7 @@ PACKAGES+=" luci-app-diskman luci-app-disks-info smartmontools kmod-usb-storage 
 PACKAGES+=" internet-detector luci-app-internet-detector internet-detector-mod-modem-restart nlbwmon luci-app-nlbwmon vnstat2 vnstati2 luci-app-vnstat2 netdata"
 
 # Theme
-PACKAGES+=" luci-theme-material luci-theme-argon luci-app-argon-config"
+PACKAGES+=" luci-theme-rtawrt luci-theme-material luci-theme-argon luci-app-argon-config"
 
 # PHP8
 PACKAGES+=" php8 php8-fastcgi php8-fpm php8-mod-session php8-mod-ctype php8-mod-fileinfo php8-mod-zip php8-mod-iconv php8-mod-mbstring"

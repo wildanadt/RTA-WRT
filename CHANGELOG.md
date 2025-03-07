@@ -1,9 +1,10 @@
 # What's New!
 
-**Changelog Firmware** (03-03-2025)
+**Changelog Firmware** (07-03-2025)
 
 - Add support for new hardware components
 - Add luci-app-droidmodem
+- Update default theme to RTAWRT and add related package references
 
 **Changelog Firmware** (02-03-2025)
 

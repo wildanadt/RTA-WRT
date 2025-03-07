@@ -71,6 +71,7 @@ packages_custom+=(
     "luci-theme-argon_|${REPOS[IMMORTALWRT]}/luci"
     "luci-app-openclash_|${REPOS[IMMORTALWRT]}/luci"
     "luci-app-passwall_|${REPOS[IMMORTALWRT]}/luci"
+    "luci-app-droidmodem_|${REPOS[IMMORTALWRT]}/luci"
 
     "luci-app-internet-detector_|${REPOS[GSPOTX2F]}"
     "internet-detector_|${REPOS[GSPOTX2F]}"
@@ -85,6 +86,7 @@ packages_custom+=(
     "luci-app-alpha-config_|https://api.github.com/repos/animegasan/luci-app-alpha-config/releases/latest"
     "luci-theme-material3_|https://api.github.com/repos/AngelaCooljx/luci-theme-material3/releases/latest"
     "luci-app-neko_|https://api.github.com/repos/nosignals/openwrt-neko/releases/latest"
+    "luci-theme-rtawrt_|https://api.github.com/repos/rizkikotet-dev/luci-theme-rtawrt/releases/latest"
 )
 
 if [ "${TYPE}" == "OPHUB" ]; then
