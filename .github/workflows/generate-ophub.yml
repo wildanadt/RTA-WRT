@@ -98,25 +98,25 @@ jobs:
           TARGET_JSON=$(cat << 'EOJ'
           {
             "target": [
-              "Amlogic s905"
-              "Amlogic s905 Beelink Mini"
-              "Amlogic s905 MXQ Pro Plus"
-              "Amlogic s905W"
-              "Amlogic s905W W95"
-              "Amlogic s905W X96 Mini"
-              "Amlogic s905W X96W"
-              "Amlogic s905X HG680P"
-              "Amlogic s905X B860H"
-              "Amlogic s905X Nexbox A95X"
-              "Amlogic s905X2"
-              "Amlogic s905X2 KM3"
-              "Amlogic s905X2 X96 Max 2G"
-              "Amlogic s905X3"
-              "Amlogic s905X3 H96 Max"
-              "Amlogic s905X3 HK1"
-              "Amlogic s905X3 X96 Max"
-              "Amlogic s912"
-              "Amlogic s912 H96 Pro Plus"
+              "Amlogic s905",
+              "Amlogic s905 Beelink Mini",
+              "Amlogic s905 MXQ Pro Plus",
+              "Amlogic s905W",
+              "Amlogic s905W W95",
+              "Amlogic s905W X96 Mini",
+              "Amlogic s905W X96W",
+              "Amlogic s905X HG680P",
+              "Amlogic s905X B860H",
+              "Amlogic s905X Nexbox A95X",
+              "Amlogic s905X2",
+              "Amlogic s905X2 KM3",
+              "Amlogic s905X2 X96 Max 2G",
+              "Amlogic s905X3",
+              "Amlogic s905X3 H96 Max",
+              "Amlogic s905X3 HK1",
+              "Amlogic s905X3 X96 Max",
+              "Amlogic s912",
+              "Amlogic s912 H96 Pro Plus",
               "Amlogic s912 X92"
             ]
           }
