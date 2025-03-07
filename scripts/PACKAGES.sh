@@ -59,6 +59,7 @@ packages_custom+=(
     "luci-app-adguardhome_|${REPOS[KIDDIN9]}"
     "sing-box_|${REPOS[KIDDIN9]}"
     "mihomo_|${REPOS[KIDDIN9]}"
+    "luci-app-droidmodem_|${REPOS[KIDDIN9]}"
 
     "luci-app-zerotier_|${REPOS[IMMORTALWRT]}/luci"
     "luci-app-ramfree_|${REPOS[IMMORTALWRT]}/luci"
@@ -71,7 +72,6 @@ packages_custom+=(
     "luci-theme-argon_|${REPOS[IMMORTALWRT]}/luci"
     "luci-app-openclash_|${REPOS[IMMORTALWRT]}/luci"
     "luci-app-passwall_|${REPOS[IMMORTALWRT]}/luci"
-    "luci-app-droidmodem_|${REPOS[IMMORTALWRT]}/luci"
 
     "luci-app-internet-detector_|${REPOS[GSPOTX2F]}"
     "internet-detector_|${REPOS[GSPOTX2F]}"
