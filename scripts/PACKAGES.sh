@@ -87,6 +87,7 @@ packages_custom+=(
     "luci-theme-material3_|https://api.github.com/repos/AngelaCooljx/luci-theme-material3/releases/latest"
     "luci-app-neko_|https://api.github.com/repos/nosignals/openwrt-neko/releases/latest"
     "luci-theme-rtawrt_|https://api.github.com/repos/rizkikotet-dev/luci-theme-rtawrt/releases/latest"
+    "luci-app-netmonitor_|https://api.github.com/repos/rizkikotet-dev/luci-app-netmonitor/releases/latest"
 )
 
 if [ "${TYPE}" == "OPHUB" ]; then

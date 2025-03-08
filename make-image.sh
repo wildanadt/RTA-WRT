@@ -84,7 +84,7 @@ PACKAGES+=" luci-app-zerotier luci-app-cloudflared tailscale luci-app-tailscale"
 PACKAGES+=" luci-app-diskman luci-app-disks-info smartmontools kmod-usb-storage kmod-usb-storage-uas ntfs-3g"
 
 # Bandwidth And Network Monitoring
-PACKAGES+=" internet-detector luci-app-internet-detector internet-detector-mod-modem-restart nlbwmon luci-app-nlbwmon vnstat2 vnstati2 luci-app-vnstat2 netdata"
+PACKAGES+=" internet-detector luci-app-internet-detector internet-detector-mod-modem-restart nlbwmon luci-app-nlbwmon vnstat2 vnstati2 luci-app-vnstat2 netdata luci-app-netmonitor"
 
 # Theme
 PACKAGES+=" luci-theme-rtawrt luci-theme-material luci-theme-argon luci-app-argon-config"
