@@ -60,6 +60,7 @@ packages_custom+=(
     "sing-box_|${REPOS[KIDDIN9]}"
     "mihomo_|${REPOS[KIDDIN9]}"
     "luci-app-droidmodem_|${REPOS[KIDDIN9]}"
+    "fm350-modem_|${REPOS[KIDDIN9]}"
 
     "luci-app-zerotier_|${REPOS[IMMORTALWRT]}/luci"
     "luci-app-ramfree_|${REPOS[IMMORTALWRT]}/luci"
