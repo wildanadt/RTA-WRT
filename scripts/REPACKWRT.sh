@@ -36,7 +36,7 @@ repackwrt() {
 
     # Validate required parameters
     if [[ -z "$builder_type" ]]; then
-        error_msg "Builder type (--ophub or --ulo) is required"
+        error_msg "Builder type (--OPHUB --ophub or --ULO --ulo) is required"
         exit 1
     fi
     
@@ -62,7 +62,7 @@ repackwrt() {
     
     # Setup directories based on builder type
     local builder_dir output_dir repo_url
-    if [[ "$builder_type" == "--ophub" ]]; then
+    if [[ "$builder_type" == "--OPHUB" ]] || [[ "$builder_type" == "--ophub" ]]; then
         builder_dir="${work_dir}/amlogic-s9xxx-openwrt-main"
         repo_url="${OPHUB_REPO}"
         log "STEPS" "Starting firmware repackaging with Ophub..."
@@ -94,7 +94,7 @@ repackwrt() {
     rm -f main.zip
 
     # Prepare builder directory
-    if [[ "$builder_type" == "--ophub" ]]; then
+    if [[ "$builder_type" == "--OPHUB" ]] || [[ "$builder_type" == "--ophub" ]]; then
         mkdir -p "${builder_dir}/openwrt-armvirt"
     else
         mkdir -p "${builder_dir}/rootfs"
@@ -111,7 +111,7 @@ repackwrt() {
     # Copy rootfs file
     log "INFO" "Copying rootfs file..."
     local target_path
-    if [[ "$builder_type" == "--ophub" ]]; then
+    if [[ "$builder_type" == "--OPHUB" ]] || [[ "$builder_type" == "--ophub" ]]; then
         target_path="${builder_dir}/openwrt-armvirt/${BASE}-armsr-armv8-generic-rootfs.tar.gz"
     else
         target_path="${builder_dir}/rootfs/${BASE}-armsr-armv8-generic-rootfs.tar.gz"
@@ -130,7 +130,7 @@ repackwrt() {
 
     # Run builder-specific operations
     local device_output_dir
-    if [[ "$builder_type" == "--ophub" ]]; then
+    if [[ "$builder_type" == "--OPHUB" ]] || [[ "$builder_type" == "--ophub" ]]; then
         log "INFO" "Running OphubBuilder..."
         if ! sudo ./remake -b "${target_board}" -k "${target_kernel}" -s 1024; then
             error_msg "OphubBuilder execution failed"

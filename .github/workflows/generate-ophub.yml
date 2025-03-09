@@ -489,7 +489,7 @@ jobs:
         run: |
           cd ${WORKING_DIR}
           chmod +x scripts/REPACKWRT.sh
-          ./scripts/REPACKWRT.sh "ophub" "$TARGET_BUILD" "$KERNEL" "${{ env.TUNNEL }}"
+          ./scripts/REPACKWRT.sh "$TYPE" "$TARGET_BUILD" "$KERNEL" "${{ env.TUNNEL }}"
           echo "status=success" >> $GITHUB_OUTPUT
 
       - name: Mod SDCard
