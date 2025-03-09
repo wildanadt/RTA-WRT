@@ -49,6 +49,7 @@ rename_firmware() {
         "-rk3588s-orangepi-5-|Rockchip_OrangePi_5"
         
         # Amlogic
+        "-s905x-|Amlogic_s905x"
         "-s905x2-|Amlogic_s905x2"
         "-s905x3-|Amlogic_s905x3"
         "-s905x4-|Amlogic_s905x4"
@@ -74,6 +75,8 @@ rename_firmware() {
         "_s912_|Amlogic_s912"
         "_s912-h96pro-plus_|Amlogic_s912-H96Pro_Plus"
         "_s912-x92_|Amlogic_s912-X92"
+        "_s905x_|Amlogic_s905x"
+        "_s905x-b860h_|Amlogic_s905x-B860H_v1-v2"
 
         # x86_64
         "x86-64-generic-ext4-combined-efi|X86_64_Generic_Ext4_Combined_EFI"
@@ -83,9 +86,14 @@ rename_firmware() {
         "x86-64-generic-squashfs-combined|X86_64_Generic_Squashfs_Combined"
         "x86-64-generic-squashfs-rootfs|X86_64_Generic_Squashfs_Rootfs"
         "x86-64-generic-rootfs|X86_64_Generic_Rootfs"
+
+
+        "Amlogic_s905x-Mod_SDCard|Amlogic_s905x-Mod_SDCard"
+        "Amlogic_s905x-B860H_v1-v2-Mod_SDCard|Amlogic_s905x-B860H_v1-v2-Mod_SDCard"
     )
 
-   for pattern in "${search_replace_patterns[@]}"; do
+    RELEASE_URL="https://github.com/rizkikotet-dev/RTA-WRT/releases/download/${RELEASE_TAG}"
+    for pattern in "${search_replace_patterns[@]}"; do
         local search="${pattern%%|*}"
         local replace="${pattern##*|}"
 
@@ -98,8 +106,10 @@ rename_firmware() {
                 local new_name
                 if [[ -n "$kernel" ]]; then
                     new_name="RTA-WRT-${OP_BASE}-${BRANCH}-${replace}-${kernel}-${TUNNEL}.img.gz"
+                    echo "${replace}-${kernel}-${TUNNEL}|${RELEASE_URL}/${new_name}" >> artifacts.txt
                 else
                     new_name="RTA-WRT-${OP_BASE}-${BRANCH}-${replace}-${TUNNEL}.img.gz"
+                    echo "${replace}-${TUNNEL}|${RELEASE_URL}/${new_name}" >> artifacts.txt
                 fi
                 echo -e "${INFO} Renaming: $file → $new_name"
                 mv "$file" "$new_name" || {
