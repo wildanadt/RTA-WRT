@@ -1,0 +1,1078 @@
+name: Generate RTA-WRT OPHUB Firmware
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_branch:
+        description: "Select the release branch:"
+        required: true
+        default: "openwrt:24.10.0"
+        type: choice
+        options:
+          - openwrt:24.10.0
+          - openwrt:23.05.5
+          - immortalwrt:24.10.0
+          - immortalwrt:23.05.4
+      target:
+        description: "Select device board"
+        required: false
+        default: "all-device"
+        type: choice
+        options:
+          - all-device
+          - Raspberry Pi 3B
+          - Raspberry Pi 4B
+          - x86-64
+          - OPHUB Amlogic s905
+          - OPHUB Amlogic s905 Beelink Mini
+          - OPHUB Amlogic s905 MXQ Pro Plus
+          - OPHUB Amlogic s905W
+          - OPHUB Amlogic s905W W95
+          - OPHUB Amlogic s905W X96 Mini
+          - OPHUB Amlogic s905W X96W
+          - OPHUB Amlogic s905X HG680P
+          - OPHUB Amlogic s905X B860H
+          - OPHUB Amlogic s905X Nexbox A95X
+          - OPHUB Amlogic s905X2
+          - OPHUB Amlogic s905X2 KM3
+          - OPHUB Amlogic s905X2 X96 Max 2G
+          - OPHUB Amlogic s905X3
+          - OPHUB Amlogic s905X3 H96 Max
+          - OPHUB Amlogic s905X3 HK1
+          - OPHUB Amlogic s905X3 X96 Max
+          - OPHUB Amlogic s912
+          - OPHUB Amlogic s912 H96 Pro Plus
+          - OPHUB Amlogic s912 X92
+          - ULO Amlogic s905X HG680P
+          - ULO Amlogic s905X B860H
+          - ULO Amlogic s905X2
+          - ULO Amlogic s905X3
+          - ULO Amlogic s905X4
+          - ULO Allwinner H5 Orange Pi Zero Plus2
+          - ULO Allwinner H5 Orange Pi Zero Plus
+          - ULO Allwinner H5 Orange Pi Prime
+          - ULO Allwinner H5 Orange Pi PC2
+          - ULO Allwinner H6 Orange Pi Lite2
+          - ULO Allwinner H6 Orange Pi 1 Plus
+          - ULO Allwinner H6 Orange Pi 3
+          - ULO Allwinner H6 Orange Pi 3 LTS
+          - ULO Allwinner H616 Orange Pi Zero2
+          - ULO Allwinner H618 Orange Pi Zero2W
+          - ULO Allwinner H618 Orange Pi Zero3
+          - ULO Rockchip rk3566 Orange Pi 3B
+          - ULO Rockchip rk3588s Orange Pi 5
+      tunnel:
+        description: "Select VPN Client app:"
+        required: true
+        default: "all-tunnel"
+        type: choice
+        options:
+          - openclash
+          - passwall
+          - nikki
+          - openclash-passwall
+          - nikki-passwall
+          - nikki-openclash
+          - all-tunnel
+          - no-tunnel
+      clean:
+        description: "Do 'make clean' for each run"
+        required: false
+        default: "true"
+        type: boolean
+
+env:
+  TZ: Asia/Jakarta
+  WORKING_DIR: imagebuilder
+  DEBIAN_FRONTEND: noninteractive
+  RELEASE_BRANCH: ${{ github.event.inputs.release_branch }}
+  TARGET: ${{ github.event.inputs.target }}
+  TUNNEL: ${{ github.event.inputs.tunnel }}
+  CLEAN: ${{ github.event.inputs.clean }}
+
+jobs:
+  prebuild:
+    runs-on: ubuntu-22.04
+    name: ${{ github.event.inputs.release_branch }}
+    outputs:
+      target: ${{ steps.set-matrix.outputs.target }}
+      type: ${{ steps.setupenv.outputs.type }}
+      base: ${{ steps.setupenv.outputs.base }}
+      branch: ${{ steps.setupenv.outputs.branch }}
+      verop: ${{ steps.setupenv.outputs.verop }}
+      download_base: ${{ steps.setupenv.outputs.download_base }}
+      date: ${{ steps.setupenv.outputs.date }}
+      datetime: ${{ steps.setupenv.outputs.datetime }}
+      datemonth: ${{ steps.setupenv.outputs.datemonth }}
+      release_name: ${{ steps.setupenv.outputs.release_name }}
+      release_tag: ${{ steps.setupenv.outputs.release_tag }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set Matrix Run
+        id: set-matrix
+        run: |
+          echo "Selected target option: [ ${{ github.event.inputs.target }} ]"
+          TARGET_JSON=$(cat << 'EOJ'
+          {
+            "target": [
+              "Raspberry Pi 3B",
+              "Raspberry Pi 4B",
+              "x86-64",
+              "OPHUB Amlogic s905",
+              "OPHUB Amlogic s905 Beelink Mini",
+              "OPHUB Amlogic s905 MXQ Pro Plus",
+              "OPHUB Amlogic s905W",
+              "OPHUB Amlogic s905W W95",
+              "OPHUB Amlogic s905W X96 Mini",
+              "OPHUB Amlogic s905W X96W",
+              "OPHUB Amlogic s905X HG680P",
+              "OPHUB Amlogic s905X B860H",
+              "OPHUB Amlogic s905X Nexbox A95X",
+              "OPHUB Amlogic s905X2",
+              "OPHUB Amlogic s905X2 KM3",
+              "OPHUB Amlogic s905X2 X96 Max 2G",
+              "OPHUB Amlogic s905X3",
+              "OPHUB Amlogic s905X3 H96 Max",
+              "OPHUB Amlogic s905X3 HK1",
+              "OPHUB Amlogic s905X3 X96 Max",
+              "OPHUB Amlogic s912",
+              "OPHUB Amlogic s912 H96 Pro Plus",
+              "OPHUB Amlogic s912 X92",
+              "ULO Amlogic s905X HG680P",
+              "ULO Amlogic s905X B860H",
+              "ULO Amlogic s905X2",
+              "ULO Amlogic s905X3",
+              "ULO Amlogic s905X4",
+              "ULO Allwinner H5 Orange Pi Zero Plus2",
+              "ULO Allwinner H5 Orange Pi Zero Plus",
+              "ULO Allwinner H5 Orange Pi Prime",
+              "ULO Allwinner H5 Orange Pi PC2",
+              "ULO Allwinner H6 Orange Pi Lite2",
+              "ULO Allwinner H6 Orange Pi 1 Plus",
+              "ULO Allwinner H6 Orange Pi 3",
+              "ULO Allwinner H6 Orange Pi 3 LTS",
+              "ULO Allwinner H616 Orange Pi Zero2",
+              "ULO Allwinner H618 Orange Pi Zero2W",
+              "ULO Allwinner H618 Orange Pi Zero3",
+              "ULO Rockchip rk3566 Orange Pi 3B",
+              "ULO Rockchip rk3588s Orange Pi 5"
+            ]
+          }
+          EOJ
+          )
+
+          if [ "${{ github.event.inputs.target }}" == "all-device" ]; then
+            echo "target=$(echo "$TARGET_JSON" | jq -c '.target')" >> $GITHUB_OUTPUT
+          else
+            echo "target=$(jq -nc --arg d "${{ github.event.inputs.target }}" '[$d]')" >> $GITHUB_OUTPUT
+          fi
+
+          echo "Selected tunnel option: [ ${{ github.event.inputs.tunnel }} ]"
+
+      - name: Setup Release Environment
+        id: setupenv
+        run: |
+          sudo timedatectl set-timezone "${{ env.TZ }}"
+
+          BASE="${RELEASE_BRANCH%:*}"
+          BRANCH="${RELEASE_BRANCH#*:}"
+          VEROP="$(echo "${BRANCH}" | awk -F. '{print $1"."$2}')"
+
+          echo "BASE=$BASE" >> $GITHUB_OUTPUT
+          echo "BRANCH=$BRANCH" >> $GITHUB_OUTPUT
+          echo "VEROP=$VEROP" >> $GITHUB_OUTPUT
+          echo "DOWNLOAD_BASE=https://downloads.${BASE}.org" >> $GITHUB_OUTPUT
+
+          DATE=$(date +'%d%m%Y')
+          DATETIME=$(date +'%d.%m.%Y-%H:%M:%S')
+          DATEMONTH=$(date +"%B-%Y" | awk '{print tolower($0)}')
+
+          echo "DATE=$DATE" >> $GITHUB_OUTPUT
+          echo "DATETIME=$DATETIME" >> $GITHUB_OUTPUT
+          echo "DATEMONTH=$DATEMONTH" >> $GITHUB_OUTPUT
+
+          if [ "${BASE}" == "openwrt" ]; then
+            RELEASE_NAME="RTA-WRT_OPHUB-OpenWRT-${BRANCH}-${DATE}"
+            RELEASE_TAG="rtawrt-ophub-openwrt-${BRANCH}-${DATE}"
+            echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
+            echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          else
+            RELEASE_NAME="RTA-WRT_OPHUB-ImmortalWRT-${BRANCH}-${DATE}"
+            RELEASE_TAG="rtawrt-ophub-immortalwrt-${BRANCH}-${DATE}"
+            echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
+            echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          fi
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        if: steps.setupenv.outputs.status == 'success'
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.setupenv.outputs.release_tag }}
+          name: ${{ steps.setupenv.outputs.release_name }}
+          prerelease: ${{ github.ref_name == 'dev' }}
+          body: |
+            # 🚀 RTA-WRT - Release Information
+
+            ## 📥 Download Statistics
+            ![GitHub Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ steps.setupenv.outputs.release_tag }}/total?style=for-the-badge&logo=Openwrt)
+
+            ## 📢 Support Channels
+            [![Channel](https://img.shields.io/badge/Telegram-Channel-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/rtawrt)
+            [![Group](https://img.shields.io/badge/Telegram-Group-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/backup_rtawrt)
+            [![Personal](https://img.shields.io/badge/Telegram-Personal-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/RizkiKotet)
+
+            ## NOTES
+            `Amlogic s905x Support Mod SDCard`
+
+            ## 📝 Changelog Firmware
+            [**Changelog Firmware**](https://github.com/rizkikotet-dev/RTA-WRT/blob/${{ github.ref_name }}/CHANGELOG.md "**Changelog Firmware**")
+          generate_release_notes: true
+
+  build-firmware:
+    name: Build ${{ matrix.target }} Firmware
+    needs: prebuild
+    runs-on: ubuntu-22.04
+    env:
+      BASE: ${{ needs.prebuild.outputs.base }}
+      BRANCH: ${{ needs.prebuild.outputs.branch }}
+      VEROP: ${{ needs.prebuild.outputs.verop }}
+      DOWNLOAD_BASE: ${{ needs.prebuild.outputs.download_base }}
+      DATE: ${{ needs.prebuild.outputs.date }}
+      DATETIME: ${{ needs.prebuild.outputs.datetime }}
+      DATEMONTH: ${{ needs.prebuild.outputs.datemonth }}
+      RELEASE_NAME: ${{ needs.prebuild.outputs.release_name }}
+      RELEASE_TAG: ${{ needs.prebuild.outputs.release_tag }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.prebuild.outputs.target) }}
+
+    steps:
+      - name: Initialization environment
+        id: init
+        run: |
+          docker rmi $(docker images -q) 2>/dev/null
+          [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
+          sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d /usr/local/lib/android 2>/dev/null
+          sudo swapoff -a
+          sudo rm -f /swapfile /mnt/swapfile
+          sudo -E apt-get -y update
+          sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* powershell openjdk* mongodb* moby* || true
+          sudo -E apt-get -y install $(curl -fsSL https://tinyurl.com/ubuntu2204-make-openwrt)
+          sudo -E systemctl daemon-reload
+          sudo -E apt-get -y autoremove --purge
+          sudo -E apt-get clean
+          sudo sed -i '/NVM_DIR/d;/skel/d' /root/{.bashrc,.profile}
+          sudo rm -rf ~/{.cargo,.dotnet,.rustup}
+          sudo timedatectl set-timezone "${{ env.TZ }}"
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          path: origin
+          fetch-depth: 1
+
+      - name: Setup Build Variables
+        id: variables
+        run: |
+          MATRIXTARGET="${{ matrix.target }}"
+          echo "MATRIXTARGET=$MATRIXTARGET" >> $GITHUB_ENV
+
+          NAMA_MODIFIED=$(echo $MATRIXTARGET | sed 's/ /-/g')
+          echo "NAMA_MODIFIED=$NAMA_MODIFIED" >> $GITHUB_ENV
+
+          case $BASE in
+            openwrt)
+              OP_BASE="OpenWrt"
+              echo "OP_BASE=$OP_BASE" >> $GITHUB_ENV
+              ;;
+            immortalwrt)
+              OP_BASE="ImmortalWrt"
+              echo "OP_BASE=$OP_BASE" >> $GITHUB_ENV
+              ;;
+          esac
+
+          # Target system configurations
+          case "$MATRIXTARGET" in
+            "Raspberry Pi 3B")
+              echo "PROFILE=rpi-3" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=bcm27xx/bcm2710" >> $GITHUB_ENV
+              echo "TARGET_NAME=bcm27xx-bcm2710" >> $GITHUB_ENV
+              echo "ARCH_1=armv7" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_cortex-a53" >> $GITHUB_ENV
+              echo "TYPE=NON-REPACK" >> $GITHUB_ENV
+              ;;
+            "Raspberry Pi 4B")
+              echo "PROFILE=rpi-4" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=bcm27xx/bcm2711" >> $GITHUB_ENV
+              echo "TARGET_NAME=bcm27xx-bcm2711" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_cortex-a72" >> $GITHUB_ENV
+              echo "TYPE=NON-REPACK" >> $GITHUB_ENV
+              ;;
+            "x86-64")
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=x86/64" >> $GITHUB_ENV
+              echo "TARGET_NAME=x86-64" >> $GITHUB_ENV
+              echo "ARCH_1=amd64" >> $GITHUB_ENV
+              echo "ARCH_2=x86_64" >> $GITHUB_ENV
+              echo "ARCH_3=x86_64" >> $GITHUB_ENV
+              echo "TYPE=NON-REPACK" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s905")
+              TARGET_BUILD="s905"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s905 Beelink Mini")
+              TARGET_BUILD="s905-beelink-mini"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s905 MXQ Pro Plus")
+              TARGET_BUILD="s905-mxqpro-plus"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s905W")
+              TARGET_BUILD="s905w"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s905W W95")
+              TARGET_BUILD="s905w-w95"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s905W X96 Mini")
+              TARGET_BUILD="s905w-x96-mini"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s905W X96W")
+              TARGET_BUILD="s905w-x96w"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s905X HG680P")
+              TARGET_BUILD="s905x"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s905X B860H")
+              TARGET_BUILD="s905x-b860h"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s905X Nexbox A95X")
+              TARGET_BUILD="s905x-nexbox-a95x"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s905X2")
+              TARGET_BUILD="s905x2"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s905X2 KM3")
+              TARGET_BUILD="s905x2-km3"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s905X2 X96 Max 2G")
+              TARGET_BUILD="s905x2-x96max-2g"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s905X3")
+              TARGET_BUILD="s905x3"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s905X3 H96 Max")
+              TARGET_BUILD="s905x3-h96max"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s905X3 HK1")
+              TARGET_BUILD="s905x3-hk1"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s905X3 X96 Max")
+              TARGET_BUILD="s905x3-x96max"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s912")
+              TARGET_BUILD="s912"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s912 H96 Pro Plus")
+              TARGET_BUILD="s912-h96pro-plus"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "OPHUB Amlogic s912 X92")
+              TARGET_BUILD="s912-x92"
+              KERNEL="5.15.y_6.1.y"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=OPHUB" >> $GITHUB_ENV
+              ;;
+            "ULO Amlogic s905X HG680P")
+              KERNEL="6.1.66-DBAI"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="s905x"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+            "ULO Amlogic s905X B860H")
+              KERNEL="6.1.66-DBAI"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="s905x"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+            "ULO Amlogic s905X2")
+              KERNEL="6.1.66-DBAI"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="s905x2"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+            "ULO Amlogic s905X3")
+              KERNEL="6.1.66-DBAI"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="s905x3"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+            "ULO Amlogic s905X4")
+              KERNEL="6.1.66-DBAI"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="s905x4"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+            "ULO Allwinner H5 Orange Pi Zero Plus2")
+              KERNEL="6.1.31-AW64-DBAI"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="h5-orangepi-zeroplus2"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+            "ULO Allwinner H5 Orange Pi Zero Plus")
+              KERNEL="6.1.31-AW64-DBAI"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="h5-orangepi-zeroplus"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+            "ULO Allwinner H5 Orange Pi Prime")
+              KERNEL="6.1.31-AW64-DBAI"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="h5-orangepi-prime"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+            "ULO Allwinner H5 Orange Pi PC2")
+              KERNEL="6.1.31-AW64-DBAI"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="h5-orangepi-pc2"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+            "ULO Allwinner H6 Orange Pi Lite2")
+              KERNEL="6.1.31-AW64-DBAI"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="h6-orangepi-lite2"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+            "ULO Allwinner H6 Orange Pi 1 Plus")
+              KERNEL="6.1.31-AW64-DBAI"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="h6-orangepi-1plus"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+            "ULO Allwinner H6 Orange Pi 3")
+              KERNEL="6.1.31-AW64-DBAI"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="h6-orangepi-3"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+            "ULO Allwinner H6 Orange Pi 3 LTS")
+              KERNEL="6.1.31-AW64-DBAI"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="h6-orangepi-3lts"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+            "ULO Allwinner H616 Orange Pi Zero2")
+              KERNEL="6.1.31-AW64-DBAI"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="h616-orangepi-zero2"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+            "ULO Allwinner H618 Orange Pi Zero2W")
+              KERNEL="6.1.31-AW64-DBAI"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="h618-orangepi-zero2w"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+            "ULO Allwinner H618 Orange Pi Zero3")
+              KERNEL="6.1.31-AW64-DBAI"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="h618-orangepi-zero3"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+            "ULO Rockchip rk3566 Orange Pi 3B")
+              KERNEL="5.10.160-rk35v-dbai"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="rk3566-orangepi-3b"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+            "ULO Rockchip rk3588s Orange Pi 5")
+              KERNEL="5.10.160-rk35v-dbai"
+              echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+              TARGET_BUILD="rk3588s-orangepi-5"
+              echo "TARGET_BUILD=$TARGET_BUILD" >> $GITHUB_ENV
+              echo "PROFILE=generic" >> $GITHUB_ENV
+              echo "TARGET_SYSTEM=armsr/armv8" >> $GITHUB_ENV
+              echo "TARGET_NAME=armsr-armv8" >> $GITHUB_ENV
+              echo "ARCH_1=arm64" >> $GITHUB_ENV
+              echo "ARCH_2=aarch64" >> $GITHUB_ENV
+              echo "ARCH_3=aarch64_generic" >> $GITHUB_ENV
+              echo "TYPE=ULO" >> $GITHUB_ENV
+              ;;
+          esac
+
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Download and Prepare Image Builder
+        id: download
+        if: steps.variables.outputs.status == 'success'
+        run: |
+          # Determine archive extension based on version
+          CURVER=$(echo "${BRANCH}" | cut -d'.' -f1)
+          archive_ext=$([ "${CURVER}" == "24" ] && echo "tar.zst" || echo "tar.xz")
+
+          # Download image builder
+          RELEASE="${DOWNLOAD_BASE}/releases/${BRANCH}/targets/${TARGET_SYSTEM}/${BASE}-imagebuilder-${BRANCH}-${TARGET_NAME}.Linux-x86_64.${archive_ext}"
+          echo "Downloading from: $RELEASE"
+          wget --progress=dot:giga "$RELEASE"
+
+          # Extract archive based on extension
+          case "${archive_ext}" in
+            tar.xz)
+              tar -xJf *-imagebuilder-* && rm -f *-imagebuilder-*.tar.xz
+              ;;
+            tar.zst)
+              tar --use-compress-program=unzstd -xf *-imagebuilder-* && rm -f *-imagebuilder-*.tar.zst
+              ;;
+          esac
+
+          # Setup working directory
+          mv *-imagebuilder-* ${WORKING_DIR}
+          cp -r $GITHUB_WORKSPACE/origin/* $GITHUB_WORKSPACE/${WORKING_DIR}
+
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Download External Packages
+        id: packages
+        if: steps.download.outputs.status == 'success'
+        run: |
+          cd ${WORKING_DIR}
+          chmod +x scripts/PACKAGES.sh
+          ./scripts/PACKAGES.sh
+
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Apply Patches and Customizations
+        id: customize
+        if: steps.packages.outputs.status == 'success'
+        run: |
+          cd ${WORKING_DIR}
+
+          # Apply patches
+          chmod +x scripts/PATCH.sh
+          ./scripts/PATCH.sh
+
+          # Apply miscellaneous changes
+          chmod +x scripts/MISC.sh
+          ./scripts/MISC.sh
+
+          # Configure tunnel apps
+          chmod +x scripts/TUNNEL.sh
+          ./scripts/TUNNEL.sh ${{ env.TUNNEL }}
+
+          df -hT ${PWD}
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Build Firmware Images
+        id: build
+        if: steps.customize.outputs.status == 'success'
+        run: |
+          cd ${WORKING_DIR}
+          mkdir -p compiled_images
+          chmod +x make-image.sh
+
+          # Clean if requested
+          if [ "${CLEAN}" == "true" ]; then
+            make clean
+          fi
+            
+          # Build image
+          time ./make-image.sh ${PROFILE} ${{ env.TUNNEL }}
+            
+          # Move and rename output files
+          if [ "$TYPE" = "OPHUB" ] || [ "$TYPE" = "ULO" ]; then
+              for file in bin/targets/"${TARGET_SYSTEM}"/*-rootfs.tar.gz; do
+                if [ -f "$file" ]; then
+                  new_name="RTA-WRT_$(basename "$file" -rootfs.tar.gz)_${{ env.TUNNEL }}-rootfs.tar.gz"
+                  mv "$file" compiled_images/$new_name
+                fi
+              done
+          else
+              for file in bin/targets/"${{ env.TARGET_SYSTEM }}"/*.img.gz; do
+                if [ -f "$file" ]; then
+                  new_name="RTA-WRT_$(basename "$file" .img.gz)_${{ env.TUNNEL }}.img.gz"
+                  mv "$file" compiled_images/$new_name
+                fi
+              done
+          fi
+
+
+          echo "Images built successfully:"
+          ls -la compiled_images/
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Repack OpenWrt
+        id: repack
+        if: steps.build.outputs.status == 'success'
+        run: |
+          cd ${WORKING_DIR}
+          chmod +x scripts/REPACKWRT.sh
+          if [ "$TYPE" = "OPHUB" ] || [ "$TYPE" = "ULO" ]; then
+            ./scripts/REPACKWRT.sh "ophub" "$TARGET_BUILD" "$KERNEL" "${{ env.TUNNEL }}"
+          fi
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Mod SDCard
+        id: modsdcard
+        if: steps.repack.outputs.status == 'success'
+        run: |
+          cd ${WORKING_DIR}
+          chmod +x scripts/MODSDCARD.sh
+          if [ "$TYPE" = "OPHUB" ] || [ "$TYPE" = "ULO" ]; then
+            ./scripts/MODSDCARD.sh
+          fi
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Before Upload
+        id: beforeupload
+        if: steps.modsdcard.outputs.status == 'success'
+        run: |
+          cd ${{ env.WORKING_DIR }}
+          chmod +x scripts/RENAMEFW.sh
+          ./scripts/RENAMEFW.sh
+          echo "status=success" >> "$GITHUB_OUTPUT"
+
+      - name: Create Release
+        if: steps.beforeupload.outputs.status == 'success'
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_NAME }}
+          files: ${{ env.WORKING_DIR }}/compiled_images/*.img.gz
+          prerelease: ${{ github.ref_name == 'dev' }}
+
+      # - name: Generate file download links
+      #   run: |
+      #     RELEASE_URL="https://github.com/rizkikotet-dev/RTA-WRT/releases/download/${{ env.RELEASE_TAG }}"
+      #     ls ${{ env.WORKING_DIR }}/compiled_images/*.img.gz | while read -r file; do
+      #       filename=$(basename "$file")
+      #       echo "$MATRIXTARGET|$RELEASE_URL/$filename" >> artifacts.txt
+      #     done
+
+      - name: Upload file links as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-links-${{ matrix.target }}
+          path: artifacts.txt
+
+  notify:
+    name: Notify Release
+    needs: [prebuild, build-firmware]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download file links as artifact
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Combine artifacts
+        run: |
+          cat artifacts/*/artifacts.txt > combined_artifacts.txt
+
+      - name: Telegram Notification
+        run: |
+          BOT_TOKEN="${{ secrets.BOT_TOKEN }}"
+          CHAT_ID="1839038773" #"${{ secrets.CHAT_ID }}"
+          THREAD_ID="734"
+
+          # Build parameters
+          BUILD="${{ needs.prebuild.outputs.type }}"
+          SOURCE="${{ needs.prebuild.outputs.base }}"
+          VERSION="${{ needs.prebuild.outputs.branch }}"
+          BUILD_TYPE="${{ env.TUNNEL }}"
+          FOR="${{ github.ref_name }}"
+
+          # Set image URL based on source
+          if [ "$SOURCE" = "immortalwrt" ]; then
+              image_url="https://avatars.githubusercontent.com/u/53193414?s=200&v=4"
+          else
+              image_url="https://avatars.githubusercontent.com/u/2528830?s=200&v=4"
+          fi
+
+          # Generate message based on branch
+          if [ "$FOR" = "main" ]; then
+              message="━━━━━━━━━━━━━━━━━━━━━━
+          🎯 *RTA-WRT Firmware Update*
+          ✅ _Stable Release_
+
+          🔹 *Build:* ${BUILD}
+          🔹 *Version:* ${SOURCE}:${VERSION}
+          🔹 *Date:* $(date '+%d-%m-%Y %H:%M:%S')
+          🔹 *Build Type:* ${BUILD_TYPE}
+
+          📌 *Release Notes:*
+          • Stable version release
+          • Recommended for all users
+          • Includes latest features and bug fixes
+          ━━━━━━━━━━━━━━━━━━━━━━"
+          else
+              message="━━━━━━━━━━━━━━━━━━━━━━
+          🚀 *RTA-WRT Firmware Update*
+          🌟 _Development Release_
+
+          🔹 *Build:* ${BUILD}
+          🔹 *Version:* ${SOURCE}:${VERSION}
+          🔹 *Date:* $(date '+%d-%m-%Y %H:%M:%S')
+          🔹 *Build Type:* ${BUILD_TYPE}
+
+          📌 *Development Notes:*
+          • Suitable for testing
+          • Please provide feedback
+          • Report any bugs found
+          • Your feedback helps development
+          ━━━━━━━━━━━━━━━━━━━━━━"
+          fi
+
+          BUTTONS='[]'
+
+          while IFS='|' read -r target_name file_url || [[ -n "$target_name" ]]; do
+              target_name=$(echo "$target_name" | xargs)
+              file_url=$(echo "$file_url" | xargs)
+
+              if [[ -n "$target_name" && -n "$file_url" ]]; then
+                  echo "Menambahkan tombol: $target_name -> $file_url"
+                  BUTTONS=$(echo "$BUTTONS" | jq --arg name "$target_name" --arg url "$file_url" \
+                      '. += [[{"text": "📥 \($name)", "url": $url}]]')
+              fi
+          done < combined_artifacts.txt
+
+          # Add a button to view the release
+          BUTTONS=$(echo "$BUTTONS" | jq '. += [[{"text": "🔗 View Release", "url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/tag/${{ needs.prebuild.outputs.release_tag }}"}]]')
+
+          # Send message with photo
+          # -d "message_thread_id=${THREAD_ID}" \
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto" \
+              -d "chat_id=${CHAT_ID}" \
+              -d "photo=${image_url}" \
+              -d "caption=${message}" \
+              -d "parse_mode=Markdown" \
+              -d "reply_markup={\"inline_keyboard\":$BUTTONS}"
+
+          # Clean up
+          rm -f combined_artifacts.txt
