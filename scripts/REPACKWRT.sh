@@ -11,7 +11,7 @@ repackwrt() {
     
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --ophub|--ulo)
+            --OPHUN|--ULO|--ophub|--ulo)
                 builder_type="$1"
                 shift
                 ;;
