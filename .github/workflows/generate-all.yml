@@ -309,7 +309,8 @@ jobs:
               echo "ARCH_1=armv7" >> $GITHUB_ENV
               echo "ARCH_2=aarch64" >> $GITHUB_ENV
               echo "ARCH_3=aarch64_cortex-a53" >> $GITHUB_ENV
-              echo "TYPE=NON-REPACK" >> $GITHUB_ENV
+              TYPE="NON-REPACK"
+              echo "TYPE=$TYPE" >> $GITHUB_ENV
               ;;
             "Raspberry Pi 4B")
               echo "PROFILE=rpi-4" >> $GITHUB_ENV
@@ -318,7 +319,8 @@ jobs:
               echo "ARCH_1=arm64" >> $GITHUB_ENV
               echo "ARCH_2=aarch64" >> $GITHUB_ENV
               echo "ARCH_3=aarch64_cortex-a72" >> $GITHUB_ENV
-              echo "TYPE=NON-REPACK" >> $GITHUB_ENV
+              TYPE="NON-REPACK"
+              echo "TYPE=$TYPE" >> $GITHUB_ENV
               ;;
             "x86-64")
               echo "PROFILE=generic" >> $GITHUB_ENV
@@ -327,7 +329,8 @@ jobs:
               echo "ARCH_1=amd64" >> $GITHUB_ENV
               echo "ARCH_2=x86_64" >> $GITHUB_ENV
               echo "ARCH_3=x86_64" >> $GITHUB_ENV
-              echo "TYPE=NON-REPACK" >> $GITHUB_ENV
+              TYPE="NON-REPACK"
+              echo "TYPE=$TYPE" >> $GITHUB_ENV
               ;;
             "OPHUB Amlogic s905")
               TARGET_BUILD="s905"
@@ -942,7 +945,7 @@ jobs:
           time ./make-image.sh ${PROFILE} ${{ env.TUNNEL }}
             
           # Move and rename output files
-          if [ "$TYPE" = "OPHUB" ] || [ "$TYPE" = "ULO" ]; then
+          if [[ "$TYPE" =~ ^(OPHUB|ULO)$ ]]; then
               for file in bin/targets/"${TARGET_SYSTEM}"/*-rootfs.tar.gz; do
                 if [ -f "$file" ]; then
                   new_name="RTA-WRT_$(basename "$file" -rootfs.tar.gz)_${{ env.TUNNEL }}-rootfs.tar.gz"
@@ -970,7 +973,7 @@ jobs:
           cd ${WORKING_DIR}
           chmod +x scripts/REPACKWRT.sh
           echo "Repacking OpenWrt images ${TYPE}..."
-          if [ "$TYPE" = "OPHUB" ] || [ "$TYPE" = "ULO" ]; then
+          if [[ "$TYPE" =~ ^(OPHUB|ULO)$ ]]; then
             ./scripts/REPACKWRT.sh "$TYPE" "$TARGET_BUILD" "$KERNEL" "${{ env.TUNNEL }}"
           fi
           echo "status=success" >> $GITHUB_OUTPUT
@@ -981,7 +984,7 @@ jobs:
         run: |
           cd ${WORKING_DIR}
           chmod +x scripts/MODSDCARD.sh
-          if [ "$TYPE" = "OPHUB" ] || [ "$TYPE" = "ULO" ]; then
+          if [[ "$TYPE" =~ ^(OPHUB|ULO)$ ]]; then
             ./scripts/MODSDCARD.sh
           fi
           echo "status=success" >> $GITHUB_OUTPUT
