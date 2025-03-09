@@ -1,5 +1,12 @@
 # What's New!
 
+**Changelog Firmware** (08-03-2025)
+
+- Add support for new hardware components
+- Add luci-app-droidmodem
+- Update default theme to RTAWRT and add related package references
+- Add Net Monitor
+
 **Changelog Firmware** (02-03-2025)
 
 - Update Nikki to v1.19.5

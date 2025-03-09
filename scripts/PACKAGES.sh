@@ -15,7 +15,7 @@ REPOS+=(
     ["IMMORTALWRT"]="https://downloads.immortalwrt.org/releases/packages-${VEROP}/${ARCH_3}"
     ["OPENWRT"]="https://downloads.openwrt.org/releases/packages-${VEROP}/${ARCH_3}"
     ["GSPOTX2F"]="https://github.com/gSpotx2f/packages-openwrt/raw/refs/heads/master/current"
-    ["FANTASTIC"]="https://fantastic-packages.github.io/packages/releases/${VEROP}/packages/x86_64"
+    ["FANTASTIC"]="https://fantastic-packages.github.io/packages/releases/${VEROP}/packages/mipsel_24kc"
 )
 
 # Define package categories with improved structure
@@ -59,6 +59,8 @@ packages_custom+=(
     "luci-app-adguardhome_|${REPOS[KIDDIN9]}"
     "sing-box_|${REPOS[KIDDIN9]}"
     "mihomo_|${REPOS[KIDDIN9]}"
+    "luci-app-droidmodem_|${REPOS[KIDDIN9]}"
+    "fm350-modem_|${REPOS[KIDDIN9]}"
 
     "luci-app-zerotier_|${REPOS[IMMORTALWRT]}/luci"
     "luci-app-ramfree_|${REPOS[IMMORTALWRT]}/luci"
@@ -85,6 +87,8 @@ packages_custom+=(
     "luci-app-alpha-config_|https://api.github.com/repos/animegasan/luci-app-alpha-config/releases/latest"
     "luci-theme-material3_|https://api.github.com/repos/AngelaCooljx/luci-theme-material3/releases/latest"
     "luci-app-neko_|https://api.github.com/repos/nosignals/openwrt-neko/releases/latest"
+    "luci-theme-rtawrt_|https://api.github.com/repos/rizkikotet-dev/luci-theme-rtawrt/releases/latest"
+    "luci-app-netmonitor_|https://api.github.com/repos/rizkikotet-dev/luci-app-netmonitor/releases/latest"
 )
 
 if [ "${TYPE}" == "OPHUB" ]; then

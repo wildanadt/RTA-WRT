@@ -187,7 +187,7 @@ jobs:
             `Amlogic s905X Support Mod SDCard`
 
             ## 📝 Changelog Firmware
-            [**Changelog Firmware**](https://github.com/rizkikotet-dev/RTA-WRT/blob/main/CHANGELOG.md "**Changelog Firmware**")
+            [**Changelog Firmware**](https://github.com/rizkikotet-dev/RTA-WRT/blob/${{ github.ref_name }}/CHANGELOG.md "**Changelog Firmware**")
           generate_release_notes: true
 
   build-firmware:
@@ -503,13 +503,13 @@ jobs:
           files: ${{ env.WORKING_DIR }}/compiled_images/*.img.gz
           prerelease: ${{ github.ref_name == 'dev' }}
 
-      - name: Generate file download links
-        run: |
-          RELEASE_URL="https://github.com/rizkikotet-dev/RTA-WRT/releases/download/${{ env.RELEASE_TAG }}"
-          ls ${{ env.WORKING_DIR }}/compiled_images/*.img.gz | while read -r file; do
-            filename=$(basename "$file")
-            echo "$MATRIXTARGET|$RELEASE_URL/$filename" >> artifacts.txt
-          done
+      # - name: Generate file download links
+      #   run: |
+      #     RELEASE_URL="https://github.com/rizkikotet-dev/RTA-WRT/releases/download/${{ env.RELEASE_TAG }}"
+      #     ls ${{ env.WORKING_DIR }}/compiled_images/*.img.gz | while read -r file; do
+      #       filename=$(basename "$file")
+      #       echo "$MATRIXTARGET|$RELEASE_URL/$filename" >> artifacts.txt
+      #     done
 
       - name: Upload file links as artifact
         uses: actions/upload-artifact@v4
