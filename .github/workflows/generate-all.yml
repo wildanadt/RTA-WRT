@@ -599,14 +599,6 @@ jobs:
           files: ${{ env.WORKING_DIR }}/compiled_images/*.img.gz
           prerelease: ${{ github.ref_name == 'dev' }}
 
-      # - name: Generate file download links
-      #   run: |
-      #     RELEASE_URL="https://github.com/rizkikotet-dev/RTA-WRT/releases/download/${{ env.RELEASE_TAG }}"
-      #     ls ${{ env.WORKING_DIR }}/compiled_images/*.img.gz | while read -r file; do
-      #       filename=$(basename "$file")
-      #       echo "$MATRIXTARGET|$RELEASE_URL/$filename" >> artifacts.txt
-      #     done
-
       - name: Upload file links as artifact
         uses: actions/upload-artifact@v4
         with:
@@ -634,7 +626,7 @@ jobs:
       - name: Telegram Notification
         run: |
           BOT_TOKEN="${{ secrets.BOT_TOKEN }}"
-          CHAT_ID="1839038773" #"${{ secrets.CHAT_ID }}"
+          CHAT_ID=${{ secrets.CHAT_ID }}"
           THREAD_ID="734"
 
           # Build parameters
@@ -702,12 +694,12 @@ jobs:
           BUTTONS=$(echo "$BUTTONS" | jq '. += [[{"text": "🔗 View Release", "url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/tag/${{ needs.prebuild.outputs.release_tag }}"}]]')
 
           # Send message with photo
-          # -d "message_thread_id=${THREAD_ID}" \
           curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto" \
               -d "chat_id=${CHAT_ID}" \
               -d "photo=${image_url}" \
               -d "caption=${message}" \
               -d "parse_mode=Markdown" \
+              -d "message_thread_id=${THREAD_ID}" \
               -d "reply_markup={\"inline_keyboard\":$BUTTONS}"
 
           # Clean up
