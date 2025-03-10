@@ -98,41 +98,6 @@ if [ "${TYPE}" == "OPHUB" ]; then
     )
 fi
 
-# Enhanced package verification function
-verify_packages() {
-    local pkg_dir="packages"
-    local -a failed_packages=()
-    local -a package_list=("${!1}")
-    
-    if [[ ! -d "$pkg_dir" ]]; then
-        error_msg "Package directory not found: $pkg_dir"
-        return 1
-    fi
-    
-    local total_found=$(find "$pkg_dir" \( -name "*.ipk" -o -name "*.apk" \) | wc -l)
-    log "INFO" "Found $total_found package files"
-    
-    for package in "${package_list[@]}"; do
-        local pkg_name="${package%%|*}"
-        if ! find "$pkg_dir" \( -name "${pkg_name}*.ipk" -o -name "${pkg_name}*.apk" \) -print -quit | grep -q .; then
-            failed_packages+=("$pkg_name")
-        fi
-    done
-    
-    local failed=${#failed_packages[@]}
-    
-    if ((failed > 0)); then
-        log "WARNING" "$failed packages failed to download:"
-        for pkg in "${failed_packages[@]}"; do
-            log "WARNING" "- $pkg"
-        done
-        return 1
-    fi
-    
-    log "SUCCESS" "All packages downloaded successfully"
-    return 0
-}
-
 # Main execution
 main() {
     local rc=0

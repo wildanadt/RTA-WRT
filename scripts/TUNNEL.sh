@@ -19,13 +19,19 @@ nikki_file_ipk="nikki_${ARCH_3}-openwrt-${VEROP}"
 nikki_file_ipk_down=$(curl -s "https://api.github.com/repos/rizkikotet-dev/OpenWrt-nikki-Mod/releases" | grep "browser_download_url" | grep -oE "https.*${nikki_file_ipk}.*.tar.gz" | head -n 1)
 
 # Package repositories
-declare -a openclash_ipk=("luci-app-openclash|https://downloads.immortalwrt.org/releases/packages-${VEROP}/${ARCH_3}/luci")
-declare -a passwall_ipk=("luci-app-passwall|https://downloads.immortalwrt.org/releases/packages-${VEROP}/${ARCH_3}/luci")
+declare -a openclash_ipk
+openclash_ipk+=(
+    "luci-app-openclash|https://downloads.immortalwrt.org/releases/packages-${VEROP}/${ARCH_3}/luci"
+)
+declare -a passwall_ipk
+passwall_ipk+=(
+    "luci-app-passwall|https://downloads.immortalwrt.org/releases/packages-${VEROP}/${ARCH_3}/luci"
+)
 
 # Function to download and setup OpenClash
 setup_openclash() {
     log "INFO" "Downloading OpenClash packages"
-    download_packages openclash_ipk[@]
+    download_packages openclash_ipk || rc=1
     ariadl "${openclash_core}" "files/etc/openclash/core/clash_meta.gz"
     gzip -d "files/etc/openclash/core/clash_meta.gz" || error_msg "Error: Failed to extract OpenClash package."
 }
@@ -33,7 +39,7 @@ setup_openclash() {
 # Function to download and setup PassWall
 setup_passwall() {
     log "INFO" "Downloading PassWall packages"
-    download_packages passwall_ipk[@]
+    download_packages passwall_ipk || rc=1
     ariadl "${passwall_core_file_zip_down}" "packages/passwall.zip"
     unzip -qq "packages/passwall.zip" -d packages && rm "packages/passwall.zip" || error_msg "Error: Failed to extract PassWall package."
 }
