@@ -467,9 +467,12 @@ jobs:
           archive_ext=$([ "${CURVER}" == "24" ] && echo "tar.zst" || echo "tar.xz")
 
           # Download image builder
+          chmod +x scripts/INCLUDE.sh
+          . ./scripts/INCLUDE.sh
           RELEASE="${DOWNLOAD_BASE}/releases/${BRANCH}/targets/${TARGET_SYSTEM}/${BASE}-imagebuilder-${BRANCH}-${TARGET_NAME}.Linux-x86_64.${archive_ext}"
-          echo "Downloading from: $RELEASE"
-          wget --progress=dot:giga "$RELEASE"
+          log "INFO" "Downloading from: $RELEASE"
+          ariadl "$RELEASE"
+          # wget --progress=dot:giga "$RELEASE"
 
           # Extract archive based on extension
           case "${archive_ext}" in

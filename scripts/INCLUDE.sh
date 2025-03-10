@@ -312,13 +312,12 @@ ariadl() {
         return 1
     fi
 
-    log "STEPS" "Aria2 Downloader"
+   log "STEPS" "Aria2 Downloader"
 
     local URL OUTPUT_FILE OUTPUT_DIR OUTPUT
     URL=$1
     local RETRY_COUNT=0
-    local MAX_RETRIES=${CONFIG[MAX_RETRIES]}
-    local RETRY_DELAY=${CONFIG[RETRY_DELAY]}
+    local MAX_RETRIES=3
 
     if [ "$#" -eq 1 ]; then
         OUTPUT_FILE=$(basename "$URL")
@@ -333,82 +332,28 @@ ariadl() {
         mkdir -p "$OUTPUT_DIR"
     fi
 
-    # Validate URL format
-    if ! [[ "$URL" =~ ^https?:// ]]; then
-        error_msg "Invalid URL format: $URL"
-        return 1
-    fi
-
-    # Check if file already exists and has content
-    if [ -f "$OUTPUT_DIR/$OUTPUT_FILE" ] && [ -s "$OUTPUT_DIR/$OUTPUT_FILE" ]; then
-        log "INFO" "File already exists: $OUTPUT_DIR/$OUTPUT_FILE"
+    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+       log "INFO" "Downloading: $URL (Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)"
         
-        # Get file size
-        local existing_size=$(stat -c%s "$OUTPUT_DIR/$OUTPUT_FILE" 2>/dev/null || 
-                            stat -f%z "$OUTPUT_DIR/$OUTPUT_FILE" 2>/dev/null)
-        
-        # Get remote file size using curl head request
-        local remote_size=$(curl -sI "$URL" | grep -i "Content-Length" | awk '{print $2}' | tr -d '\r')
-        
-        if [[ -n "$remote_size" ]] && [[ "$existing_size" -eq "$remote_size" ]]; then
-            log "SUCCESS" "Existing file is complete, skipping download"
-            return 0
-        else
-            log "WARNING" "Existing file may be incomplete, redownloading"
+        if [ -f "$OUTPUT_DIR/$OUTPUT_FILE" ]; then
             rm "$OUTPUT_DIR/$OUTPUT_FILE"
         fi
-    fi
-
-    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-        log "INFO" "Downloading: $URL (Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)"
         
-        # Create temporary file to capture output
-        local temp_log=$(mktemp)
+        aria2c -q -d "$OUTPUT_DIR" -o "$OUTPUT_FILE" "$URL"
         
-        # Start download with aria2c
-        (aria2c --connect-timeout=${CONFIG[CONNECTION_TIMEOUT]} \
-                --max-tries=5 \
-                --retry-wait=3 \
-                --check-certificate=true \
-                --max-connection-per-server=16 \
-                --split=16 \
-                --min-split-size=1M \
-                --continue=true \
-                --dir="$OUTPUT_DIR" \
-                --out="$OUTPUT_FILE" \
-                "$URL" > "$temp_log" 2>&1) &
-        
-        local download_pid=$!
-        spinner $download_pid "Downloading $(basename "$URL")..."
-        local result=$?
-        
-        if [ $result -eq 0 ]; then
-            local filesize=$(stat -c%s "$OUTPUT_DIR/$OUTPUT_FILE" 2>/dev/null || 
-                           stat -f%z "$OUTPUT_DIR/$OUTPUT_FILE" 2>/dev/null)
-            log "SUCCESS" "Downloaded: $OUTPUT_FILE ($(numfmt --to=iec-i --suffix=B $filesize))"
-            rm -f "$temp_log"
+        if [ $? -eq 0 ]; then
+           log "SUCCESS" "Downloaded: $OUTPUT_FILE"
             return 0
         else
             RETRY_COUNT=$((RETRY_COUNT + 1))
-            
-            # Log the error details
-            log "ERROR" "Download failed with code $result"
-            cat "$temp_log" | while read line; do
-                log "DEBUG" "$line"
-            done
-            
             if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-                log "WARNING" "Retrying in $RETRY_DELAY seconds..."
-                sleep $RETRY_DELAY
-                # Increase delay exponentially
-                RETRY_DELAY=$((RETRY_DELAY * 2))
+               error_msg " Download failed. Retrying..."
+                sleep 2
             fi
         fi
-        
-        rm -f "$temp_log"
     done
 
-    error_msg "Failed to download: $OUTPUT_FILE after $MAX_RETRIES attempts"
+   error_msg " Failed to download: $OUTPUT_FILE after $MAX_RETRIES attempts"
     return 1
 }
 
