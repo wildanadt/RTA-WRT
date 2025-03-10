@@ -36,38 +36,14 @@ trap 'error_msg "Script interrupted" $LINENO' INT TERM
 
 # Enhanced color setup with dynamic terminal capability detection
 setup_colors() {
-    # Check for color support
-    if [[ -t 1 ]] && [[ -n "$TERM" ]] && [[ "$TERM" != "dumb" ]]; then
-        TERM_COLORS=$(tput colors 2>/dev/null || echo 0)
-        if [[ $TERM_COLORS -ge 8 ]]; then
-            PURPLE="\033[95m"
-            BLUE="\033[94m"
-            GREEN="\033[92m"
-            YELLOW="\033[93m"
-            RED="\033[91m"
-            MAGENTA='\033[0;35m'
-            CYAN='\033[0;36m'
-            RESET="\033[0m"
-        else
-            PURPLE=""
-            BLUE=""
-            GREEN=""
-            YELLOW=""
-            RED=""
-            MAGENTA=""
-            CYAN=""
-            RESET=""
-        fi
-    else
-        PURPLE=""
-        BLUE=""
-        GREEN=""
-        YELLOW=""
-        RED=""
-        MAGENTA=""
-        CYAN=""
-        RESET=""
-    fi
+    PURPLE="\033[95m"
+    BLUE="\033[94m"
+    GREEN="\033[92m"
+    YELLOW="\033[93m"
+    RED="\033[91m"
+    MAGENTA='\033[0;35m'
+    CYAN='\033[0;36m'
+    RESET="\033[0m"
 
     STEPS="[${PURPLE} STEPS ${RESET}]"
     INFO="[${BLUE} INFO ${RESET}]"
