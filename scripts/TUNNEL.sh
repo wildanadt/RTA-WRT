@@ -32,6 +32,7 @@ passwall_ipk+=(
 setup_openclash() {
     log "INFO" "Downloading OpenClash packages"
     download_packages openclash_ipk || rc=1
+    verify_packages
     ariadl "${openclash_core}" "files/etc/openclash/core/clash_meta.gz"
     gzip -d "files/etc/openclash/core/clash_meta.gz" || error_msg "Error: Failed to extract OpenClash package."
 }
@@ -40,6 +41,7 @@ setup_openclash() {
 setup_passwall() {
     log "INFO" "Downloading PassWall packages"
     download_packages passwall_ipk || rc=1
+    verify_packages
     ariadl "${passwall_core_file_zip_down}" "packages/passwall.zip"
     unzip -qq "packages/passwall.zip" -d packages && rm "packages/passwall.zip" || error_msg "Error: Failed to extract PassWall package."
 }
