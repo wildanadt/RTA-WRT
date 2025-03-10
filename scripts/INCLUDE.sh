@@ -11,7 +11,6 @@ CONFIG=(
     ["RETRY_DELAY"]=2
     ["SPINNER_INTERVAL"]=0.1
     ["DEBUG"]=false
-    ["LOG_FILE"]="script_execution.log"
     ["TIMEOUT_SECONDS"]=60
     ["CONNECTION_TIMEOUT"]=30
     ["PARALLEL_DOWNLOADS"]=4
@@ -21,13 +20,6 @@ CONFIG=(
 cleanup() {
     printf "\e[?25h"  # Ensure cursor is visible
     kill $(jobs -p) 2>/dev/null || true
-    
-    # Archive logs on exit
-    if [[ -f "${CONFIG[LOG_FILE]}" ]]; then
-        local archive_name="logs_$(date +%Y%m%d_%H%M%S).tar.gz"
-        tar -czf "$archive_name" "${CONFIG[LOG_FILE]}" 2>/dev/null && 
-        log "INFO" "Logs archived to $archive_name" || true
-    fi
 }
 
 # Set up cleanup trap
@@ -68,7 +60,7 @@ log() {
     local timestamp=$(date '+%d-%m-%Y %H:%M:%S')
     
     # Log to file
-    echo "[$timestamp] [$level] $message" >> "${CONFIG[LOG_FILE]}"
+    echo "[$timestamp] [$level] $message"
     
     # Output to console if not in quiet mode
     case "$level" in
@@ -580,9 +572,6 @@ main() {
     echo -e "${CYAN}===============================================${RESET}"
     echo -e "${BLUE}Starting execution: $(date '+%Y-%m-%d %H:%M:%S')${RESET}"
     echo ""
-    
-    # Reset log file
-    > "${CONFIG[LOG_FILE]}"
     
     # Start execution
     log "STEPS" "Initializing script"
