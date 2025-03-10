@@ -106,10 +106,6 @@ main() {
     log "INFO" "Downloading Custom packages..."
     download_packages packages_custom || rc=1
     
-    # Verify all downloads
-    log "INFO" "Verifying all packages..."
-    verify_packages
-    
     if [ $rc -eq 0 ]; then
         log "SUCCESS" "Package download and verification completed successfully"
     else

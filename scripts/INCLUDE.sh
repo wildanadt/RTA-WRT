@@ -14,7 +14,6 @@ CONFIG=(
     ["LOG_FILE"]="script_execution.log"
     ["TIMEOUT_SECONDS"]=60
     ["CONNECTION_TIMEOUT"]=30
-    ["PARALLEL_DOWNLOADS"]=4
 )
 
 # Cleanup function
@@ -413,60 +412,6 @@ ariadl() {
     return 1
 }
 
-# Parallel download implementation
-parallel_download() {
-    local -n urls_array=$1
-    local output_dir="${2:-downloads}"
-    local max_parallel=${CONFIG[PARALLEL_DOWNLOADS]}
-    local total_files=${#urls_array[@]}
-    local completed=0
-    local active=0
-    local pids=()
-    
-    mkdir -p "$output_dir"
-    log "STEPS" "Starting parallel download of $total_files files (max $max_parallel at once)"
-    
-    for url in "${urls_array[@]}"; do
-        # Wait if we've reached max parallel downloads
-        while [ $active -ge $max_parallel ]; do
-            for i in "${!pids[@]}"; do
-                if ! kill -0 ${pids[$i]} 2>/dev/null; then
-                    unset pids[$i]
-                    ((completed++))
-                    ((active--))
-                    progress_bar $completed $total_files "Downloads"
-                fi
-            done
-            
-            # If still at max, wait a bit
-            if [ $active -ge $max_parallel ]; then
-                sleep 0.5
-            fi
-        done
-        
-        # Start a new download
-        local filename=$(basename "$url")
-        local output="$output_dir/$filename"
-        
-        (ariadl "$url" "$output" > /dev/null 2>&1) &
-        pids+=($!)
-        ((active++))
-        
-        log "INFO" "Started download: $filename (PID: ${pids[-1]})"
-    done
-    
-    # Wait for remaining downloads
-    log "INFO" "Waiting for remaining downloads to complete..."
-    for pid in "${pids[@]}"; do
-        wait $pid 2>/dev/null
-        ((completed++))
-        progress_bar $completed $total_files "Downloads"
-    done
-    
-    log "SUCCESS" "Completed $completed/$total_files downloads"
-    return 0
-}
-
 # Enhanced package downloader with improved URL handling and validation
 download_packages() {
     local -n package_list="$1"  # Use nameref for array reference
@@ -601,110 +546,6 @@ download_packages() {
         # Add to download queue
         download_queue+=("$download_url")
     done
-    
-    # Process download queue in parallel
-    if [ ${#download_queue[@]} -eq 0 ]; then
-        log "WARNING" "No packages found to download"
-        return 1
-    else
-        log "INFO" "Queued ${#download_queue[@]} packages for download"
-        parallel_download download_queue "$download_dir"
-        
-        # Verify downloads
-        local successful=0
-        for url in "${download_queue[@]}"; do
-            local filename=$(basename "$url")
-            if [ -f "$download_dir/$filename" ] && [ -s "$download_dir/$filename" ]; then
-                ((successful++))
-            fi
-        done
-        
-        log "SUCCESS" "Successfully downloaded $successful/${#download_queue[@]} packages"
-        return 0
-    fi
-}
-
-# Verify package integrity
-verify_packages() {
-    local package_dir="${1:-packages}"
-    local verify_method="${2:-md5}"
-    
-    if [ ! -d "$package_dir" ]; then
-        log "ERROR" "Package directory not found: $package_dir"
-        return 1
-    fi
-    
-    local packages=("$package_dir"/*.{ipk,apk})
-    local total=${#packages[@]}
-    
-    if [ $total -eq 0 ] || [ "${packages[0]}" = "$package_dir/*.{ipk,apk}" ]; then
-        log "WARNING" "No packages found in $package_dir"
-        return 1
-    fi
-    
-    log "STEPS" "Verifying $total packages in $package_dir"
-    
-    local verified=0
-    local corrupted=0
-    
-    for ((i=0; i<total; i++)); do
-        local package="${packages[$i]}"
-        local filename=$(basename "$package")
-        
-        progress_bar $((i+1)) $total "Verifying packages"
-        
-        # Basic size check
-        if [ ! -s "$package" ]; then
-            log "ERROR" "Package is empty: $filename"
-            ((corrupted++))
-            continue
-        fi
-        
-        # File type check
-        local file_type=$(file -b "$package")
-        
-        case "$verify_method" in
-            "md5")
-                # Create MD5 checksum
-                local md5sum=$(md5sum "$package" | cut -d' ' -f1)
-                log "DEBUG" "MD5 checksum for $filename: $md5sum"
-                ((verified++))
-                ;;
-                
-            "extract-test")
-                # Try to open/read the package without extracting
-                local test_result
-                
-                if [[ "$filename" == *.ipk ]]; then
-                    test_result=$(ar t "$package" 2>&1)
-                elif [[ "$filename" == *.apk ]]; then
-                    test_result=$(unzip -t "$package" >/dev/null 2>&1; echo $?)
-                fi
-                
-                if [ $? -eq 0 ]; then
-                    log "DEBUG" "Package verified: $filename"
-                    ((verified++))
-                else
-                    log "ERROR" "Package verification failed: $filename"
-                    log "DEBUG" "Error: $test_result"
-                    ((corrupted++))
-                fi
-                ;;
-                
-            *)
-                log "WARNING" "Unknown verification method: $verify_method"
-                ((verified++))  # Assume ok by default
-                ;;
-        esac
-    done
-    
-    if [ $corrupted -eq 0 ]; then
-        log "SUCCESS" "All packages verified successfully"
-        return 0
-    else
-        log "WARNING" "$corrupted/$total packages failed verification"
-        return 1
-    fi
 }
 
 # Initialize the script
