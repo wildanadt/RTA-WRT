@@ -108,9 +108,11 @@ rename_firmware() {
                 if [[ -n "$kernel" ]]; then
                     new_name="RTA-WRT-${OP_BASE}-${BRANCH}-${replace}-${kernel}-${TUNNEL}.img.gz"
                     echo "${replace}-${kernel}-${TUNNEL}|${RELEASE_URL}/${new_name}" >> artifacts.txt
+                    ls -lh
                 else
                     new_name="RTA-WRT-${OP_BASE}-${BRANCH}-${replace}-${TUNNEL}.img.gz"
                     echo "${replace}-${TUNNEL}|${RELEASE_URL}/${new_name}" >> artifacts.txt
+                    ls -lh
                 fi
                 echo -e "${INFO} Renaming: $file → $new_name"
                 mv "$file" "$new_name" || {
