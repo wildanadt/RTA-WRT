@@ -606,7 +606,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: release-links-${{ matrix.target }}
-          path: $GITHUB_WORKSPACE/$WORKING_DIR/artifacts.txt
+          path: $GITHUB_WORKSPACE/$WORKING_DIR/compiled_images/artifacts.txt
 
       - name: Clean Storage
         run: |

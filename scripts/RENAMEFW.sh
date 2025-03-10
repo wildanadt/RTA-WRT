@@ -88,8 +88,8 @@ rename_firmware() {
         "x86-64-generic-rootfs|X86_64_Generic_Rootfs"
 
 
-        "Amlogic_s905x-Mod_SDCard|Amlogic_s905x-Mod_SDCard"
-        "Amlogic_s905x-B860H_v1-v2-Mod_SDCard|Amlogic_s905x-B860H_v1-v2-Mod_SDCard"
+        "Amlogic_s905x-Mod_SDCard-HG680P|Amlogic_s905x-Mod_SDCard-HG680P"
+        "Amlogic_s905x-Mod_SDCard-B860H_v1-v2|Amlogic_s905x-Mod_SDCard-B860H_v1-v2"
     )
 
     RELEASE_URL="https://github.com/rizkikotet-dev/RTA-WRT/releases/download/${RELEASE_TAG}"
@@ -106,10 +106,10 @@ rename_firmware() {
                 local new_name
                 if [[ -n "$kernel" ]]; then
                     new_name="RTA-WRT-${OP_BASE}-${BRANCH}-${replace}-${kernel}-${TUNNEL}.img.gz"
-                    echo "${replace}-${kernel}-${TUNNEL}|${RELEASE_URL}/${new_name}" >> $GITHUB_WORKSPACE/$WORKING_DIR/artifacts.txt
+                    echo "${replace}-${kernel}-${TUNNEL}|${RELEASE_URL}/${new_name}" >> artifacts.txt
                 else
                     new_name="RTA-WRT-${OP_BASE}-${BRANCH}-${replace}-${TUNNEL}.img.gz"
-                    echo "${replace}-${TUNNEL}|${RELEASE_URL}/${new_name}" >> $GITHUB_WORKSPACE/$WORKING_DIR/artifacts.txt
+                    echo "${replace}-${TUNNEL}|${RELEASE_URL}/${new_name}" >> artifacts.txt
                 fi
                 echo -e "${INFO} Renaming: $file → $new_name"
                 mv "$file" "$new_name" || {
