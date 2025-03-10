@@ -467,8 +467,8 @@ jobs:
           archive_ext=$([ "${CURVER}" == "24" ] && echo "tar.zst" || echo "tar.xz")
 
           # Download image builder
-          chmod +x scripts/INCLUDE.sh
-          . ./scripts/INCLUDE.sh
+          chmod +x $GITHUB_WORKSPACE/origin/scripts/INCLUDE.sh
+          . ./$GITHUB_WORKSPACE/origin/scripts/INCLUDE.sh
           RELEASE="${DOWNLOAD_BASE}/releases/${BRANCH}/targets/${TARGET_SYSTEM}/${BASE}-imagebuilder-${BRANCH}-${TARGET_NAME}.Linux-x86_64.${archive_ext}"
           log "INFO" "Downloading from: $RELEASE"
           ariadl "$RELEASE"
