@@ -272,6 +272,7 @@ download_packages() {
                 "${filename}[^\"]*\.(ipk|apk)"
                 "${filename}_.*\.(ipk|apk)"
                 "${filename}.*\.(ipk|apk)"
+                "${filename}*\.(ipk|apk)"
             )
             
             for pattern in "${patterns[@]}"; do
