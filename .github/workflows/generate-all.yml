@@ -43,6 +43,7 @@ on:
           - OPHUB Amlogic s912
           - OPHUB Amlogic s912 H96 Pro Plus
           - OPHUB Amlogic s912 X92
+          - OPHUB Rockchip rk3318 H96-MAX
           - ULO Amlogic s905X HG680P
           - ULO Amlogic s905X B860H
           - ULO Amlogic s905X2
@@ -141,6 +142,7 @@ jobs:
               "OPHUB Amlogic s912",
               "OPHUB Amlogic s912 H96 Pro Plus",
               "OPHUB Amlogic s912 X92",
+              "OPHUB Rockchip rk3318 H96-MAX",
               "ULO Amlogic s905X HG680P",
               "ULO Amlogic s905X B860H",
               "ULO Amlogic s905X2",
@@ -388,6 +390,9 @@ jobs:
               ;;
             "OPHUB Amlogic s912 X92")
               configure_arm_device "s912-x92" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Rockchip rk3318 H96-MAX")
+              configure_arm_device "rk3318-box" "6.1.y_6.6.y" "OPHUB"
               ;;
               
             # ULO Amlogic devices

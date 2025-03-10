@@ -77,6 +77,7 @@ rename_firmware() {
         "_s912-x92_|Amlogic_s912-X92"
         "_s905x_|Amlogic_s905x"
         "_s905x-b860h_|Amlogic_s905x-B860H_v1-v2"
+        "_rk3318-box_|Rockchip_rk3318_H96-MAX"
 
         # x86_64
         "x86-64-generic-ext4-combined-efi|X86_64_Generic_Ext4_Combined_EFI"

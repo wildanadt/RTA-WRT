@@ -731,68 +731,6 @@ verify_packages() {
     fi
 }
 
-# Generate a report
-generate_report() {
-    local report_file="execution_report_$(date +%Y%m%d_%H%M%S).md"
-    log "STEPS" "Generating execution report: $report_file"
-    
-    # Create report header
-    cat > "$report_file" << EOF
-# Script Execution Report
-- **Date**: $(date '+%Y-%m-%d %H:%M:%S')
-- **Script**: $(basename "$0")
-- **User**: $(whoami)
-- **Host**: $(hostname)
-
-## System Information
-- **OS**: $(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d '"' || echo "Unknown")
-- **Kernel**: $(uname -r)
-- **Architecture**: $(uname -m)
-- **CPU Cores**: $(nproc 2>/dev/null || echo "Unknown")
-- **Memory**: $(free -h 2>/dev/null | awk '/^Mem:/ {print $2}' || echo "Unknown")
-- **Disk Space**: $(df -h . | awk 'NR==2 {print $4}' || echo "Unknown") free
-
-## Execution Summary
-EOF
-    
-    # Add log summary to report
-    if [ -f "${CONFIG[LOG_FILE]}" ]; then
-        local error_count=$(grep -c "\[ERROR\]" "${CONFIG[LOG_FILE]}")
-        local warning_count=$(grep -c "\[WARNING\]" "${CONFIG[LOG_FILE]}")
-        local success_count=$(grep -c "\[SUCCESS\]" "${CONFIG[LOG_FILE]}")
-        
-        cat >> "$report_file" << EOF
-- **Status**: ${error_count} errors, ${warning_count} warnings, ${success_count} successful operations
-- **Errors**: ${error_count}
-- **Warnings**: ${warning_count}
-- **Successful Operations**: ${success_count}
-EOF
-        
-        # Add error details if any
-        if [ $error_count -gt 0 ]; then
-            echo -e "\n### Errors" >> "$report_file"
-            grep "\[ERROR\]" "${CONFIG[LOG_FILE]}" | sed 's/\[[^]]*\] \[ERROR\] /- /' >> "$report_file"
-        fi
-        
-        # Add warning details if any
-        if [ $warning_count -gt 0 ]; then
-            echo -e "\n### Warnings" >> "$report_file"
-            grep "\[WARNING\]" "${CONFIG[LOG_FILE]}" | sed 's/\[[^]]*\] \[WARNING\] /- /' >> "$report_file"
-        fi
-        
-        # Add full log reference
-        echo -e "\n## Full Log" >> "$report_file"
-        echo '```log' >> "$report_file"
-        tail -n 100 "${CONFIG[LOG_FILE]}" >> "$report_file"
-        echo '```' >> "$report_file"
-    else
-        echo "- **Status**: Log file not found" >> "$report_file"
-    fi
-    
-    log "SUCCESS" "Report generated: $report_file"
-    return 0
-}
-
 # Initialize the script
 setup_colors
 
