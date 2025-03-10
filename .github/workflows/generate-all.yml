@@ -392,7 +392,7 @@ jobs:
               configure_arm_device "s912-x92" "5.15.y_6.1.y" "OPHUB"
               ;;
             "OPHUB Rockchip rk3318 H96-MAX")
-              configure_arm_device "rk3318-box" "6.1.y_6.6.y" "OPHUB"
+              configure_arm_device "rk3318-box" "6.1.y" "OPHUB"
               ;;
               
             # ULO Amlogic devices
