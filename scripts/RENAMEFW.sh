@@ -56,11 +56,9 @@ rename_firmware() {
         return 0
     }
 
-    # Search and replace patterns organized by device category
-    declare -A pattern_categories
-    
-    # BCM27xx (Raspberry Pi)
-    pattern_categories["bcm27xx"]=(
+    # Use simple arrays instead of associative arrays
+    # BCM27xx (Raspberry Pi) patterns
+    bcm27xx_patterns=(
         "-bcm27xx-bcm2710-rpi-3-ext4-factory|Broadcom_RaspberryPi_3B-Ext4_Factory"
         "-bcm27xx-bcm2710-rpi-3-ext4-sysupgrade|Broadcom_RaspberryPi_3B-Ext4_Sysupgrade"
         "-bcm27xx-bcm2710-rpi-3-squashfs-factory|Broadcom_RaspberryPi_3B-Squashfs_Factory"
@@ -71,8 +69,8 @@ rename_firmware() {
         "-bcm27xx-bcm2711-rpi-4-squashfs-sysupgrade|Broadcom_RaspberryPi_4B-Squashfs_Sysupgrade"
     )
     
-    # Allwinner
-    pattern_categories["allwinner"]=(
+    # Allwinner patterns
+    allwinner_patterns=(
         "-h5-orangepi-pc2-|Allwinner_OrangePi_PC2"
         "-h5-orangepi-prime-|Allwinner_OrangePi_Prime"
         "-h5-orangepi-zeroplus-|Allwinner_OrangePi_ZeroPlus"
@@ -86,15 +84,15 @@ rename_firmware() {
         "-h618-orangepi-zero3-|Allwinner_OrangePi_Zero3"
     )
     
-    # Rockchip
-    pattern_categories["rockchip"]=(
+    # Rockchip patterns
+    rockchip_patterns=(
         "-rk3566-orangepi-3b-|Rockchip_OrangePi_3B"
         "-rk3588s-orangepi-5-|Rockchip_OrangePi_5"
         "_rk3318-box_|Rockchip_rk3318_H96-MAX"
     )
     
-    # Amlogic
-    pattern_categories["amlogic"]=(
+    # Amlogic patterns
+    amlogic_patterns=(
         "-s905x-|Amlogic_s905x"
         "-s905x2-|Amlogic_s905x2"
         "-s905x3-|Amlogic_s905x3"
@@ -126,8 +124,8 @@ rename_firmware() {
         "Amlogic_s905x-Mod_SDCard-B860H_v1-v2|Amlogic_s905x-Mod_SDCard-B860H_v1-v2"
     )
     
-    # x86_64
-    pattern_categories["x86_64"]=(
+    # x86_64 patterns
+    x86_64_patterns=(
         "x86-64-generic-ext4-combined-efi|X86_64_Generic_Ext4_Combined_EFI"
         "x86-64-generic-ext4-combined|X86_64_Generic_Ext4_Combined"
         "x86-64-generic-ext4-rootfs|X86_64_Generic_Ext4_Rootfs"
@@ -142,30 +140,119 @@ rename_firmware() {
     local failed_count=0
     
     # Process each category
-    for category in "${!pattern_categories[@]}"; do
-        echo -e "${INFO} Processing ${category} devices..."
+    echo -e "${INFO} Processing BCM27xx devices..."
+    for pattern in "${bcm27xx_patterns[@]}"; do
+        local search="${pattern%%|*}"
+        local replace="${pattern##*|}"
         
-        for pattern in "${pattern_categories[$category][@]}"; do
-            local search="${pattern%%|*}"
-            local replace="${pattern##*|}"
-            
-            # Process img.gz files
-            for file in *"${search}"*.img.gz; do
-                if process_file "$file" "$search" "$replace" "img.gz"; then
-                    ((renamed_count++))
-                else
-                    ((failed_count++))
-                fi
-            done
-            
-            # Process tar.gz files
-            for file in *"${search}"*.tar.gz; do
-                if process_file "$file" "$search" "$replace" "tar.gz"; then
-                    ((renamed_count++))
-                else
-                    ((failed_count++))
-                fi
-            done
+        # Process img.gz files
+        for file in *"${search}"*.img.gz; do
+            if process_file "$file" "$search" "$replace" "img.gz"; then
+                ((renamed_count++))
+            else
+                ((failed_count++))
+            fi
+        done
+        
+        # Process tar.gz files
+        for file in *"${search}"*.tar.gz; do
+            if process_file "$file" "$search" "$replace" "tar.gz"; then
+                ((renamed_count++))
+            else
+                ((failed_count++))
+            fi
+        done
+    done
+    
+    echo -e "${INFO} Processing Allwinner devices..."
+    for pattern in "${allwinner_patterns[@]}"; do
+        local search="${pattern%%|*}"
+        local replace="${pattern##*|}"
+        
+        # Process files
+        for file in *"${search}"*.img.gz; do
+            if process_file "$file" "$search" "$replace" "img.gz"; then
+                ((renamed_count++))
+            else
+                ((failed_count++))
+            fi
+        done
+        
+        for file in *"${search}"*.tar.gz; do
+            if process_file "$file" "$search" "$replace" "tar.gz"; then
+                ((renamed_count++))
+            else
+                ((failed_count++))
+            fi
+        done
+    done
+    
+    echo -e "${INFO} Processing Rockchip devices..."
+    for pattern in "${rockchip_patterns[@]}"; do
+        local search="${pattern%%|*}"
+        local replace="${pattern##*|}"
+        
+        # Process files
+        for file in *"${search}"*.img.gz; do
+            if process_file "$file" "$search" "$replace" "img.gz"; then
+                ((renamed_count++))
+            else
+                ((failed_count++))
+            fi
+        done
+        
+        for file in *"${search}"*.tar.gz; do
+            if process_file "$file" "$search" "$replace" "tar.gz"; then
+                ((renamed_count++))
+            else
+                ((failed_count++))
+            fi
+        done
+    done
+    
+    echo -e "${INFO} Processing Amlogic devices..."
+    for pattern in "${amlogic_patterns[@]}"; do
+        local search="${pattern%%|*}"
+        local replace="${pattern##*|}"
+        
+        # Process files
+        for file in *"${search}"*.img.gz; do
+            if process_file "$file" "$search" "$replace" "img.gz"; then
+                ((renamed_count++))
+            else
+                ((failed_count++))
+            fi
+        done
+        
+        for file in *"${search}"*.tar.gz; do
+            if process_file "$file" "$search" "$replace" "tar.gz"; then
+                ((renamed_count++))
+            else
+                ((failed_count++))
+            fi
+        done
+    done
+    
+    echo -e "${INFO} Processing x86_64 devices..."
+    for pattern in "${x86_64_patterns[@]}"; do
+        local search="${pattern%%|*}"
+        local replace="${pattern##*|}"
+        
+        # Process files
+        for file in *"${search}"*.img.gz; do
+            if process_file "$file" "$search" "$replace" "img.gz"; then
+                ((renamed_count++))
+            else
+                ((failed_count++))
+            fi
+        done
+        
+        for file in *"${search}"*.tar.gz; do
+            if process_file "$file" "$search" "$replace" "tar.gz"; then
+                ((renamed_count++))
+            else
+                ((failed_count++))
+            fi
         done
     done
 
