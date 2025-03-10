@@ -664,7 +664,7 @@ verify_packages() {
     if [ $total -eq 0 ] || [ "${packages[0]}" = "$package_dir/*.{ipk,apk}" ]; then
         log "WARNING" "No packages found in $package_dir"
         return 1
-    }
+    fi
     
     log "STEPS" "Verifying $total packages in $package_dir"
     
