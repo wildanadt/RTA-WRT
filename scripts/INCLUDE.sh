@@ -750,4 +750,6 @@ main() {
     log "STEPS" "Initializing script"
     
     # Check system resources
-    check_system_resources || log "WARNING" "
+    check_system_resources || log "WARNING" "System resource check failed"
+}
+main
