@@ -357,6 +357,60 @@ ariadl() {
     return 1
 }
 
+# Parallel download implementation
+parallel_download() {
+    local -n urls_array=$1
+    local output_dir="${2:-packages}"
+    local max_parallel=${CONFIG[PARALLEL_DOWNLOADS]}
+    local total_files=${#urls_array[@]}
+    local completed=0
+    local active=0
+    local pids=()
+    
+    mkdir -p "$output_dir"
+    log "STEPS" "Starting parallel download of $total_files files (max $max_parallel at once)"
+    
+    for url in "${urls_array[@]}"; do
+        # Wait if we've reached max parallel downloads
+        while [ $active -ge $max_parallel ]; do
+            for i in "${!pids[@]}"; do
+                if ! kill -0 ${pids[$i]} 2>/dev/null; then
+                    unset pids[$i]
+                    ((completed++))
+                    ((active--))
+                    progress_bar $completed $total_files "Downloads"
+                fi
+            done
+            
+            # If still at max, wait a bit
+            if [ $active -ge $max_parallel ]; then
+                sleep 0.5
+            fi
+        done
+        
+        # Start a new download
+        local filename=$(basename "$url")
+        local output="$output_dir/$filename"
+        
+        (ariadl "$url" "$output" > /dev/null 2>&1) &
+        pids+=($!)
+        ((active++))
+        
+        log "INFO" "Started download: $filename (PID: ${pids[-1]})"
+    done
+    
+    # Wait for remaining downloads
+    log "INFO" "Waiting for remaining downloads to complete..."
+    for pid in "${pids[@]}"; do
+        wait $pid 2>/dev/null
+        ((completed++))
+        progress_bar $completed $total_files "Downloads"
+    done
+    
+    log "SUCCESS" "Completed $completed/$total_files downloads"
+    return 0
+}
+
 # Enhanced package downloader with improved URL handling and validation
 download_packages() {
     local -n package_list="$1"  # Use nameref for array reference
@@ -491,6 +545,27 @@ download_packages() {
         # Add to download queue
         download_queue+=("$download_url")
     done
+
+    # Process download queue in parallel
+    if [ ${#download_queue[@]} -eq 0 ]; then
+        log "WARNING" "No packages found to download"
+        return 1
+    else
+        log "INFO" "Queued ${#download_queue[@]} packages for download"
+        parallel_download download_queue "$download_dir"
+        
+        # Verify downloads
+        local successful=0
+        for url in "${download_queue[@]}"; do
+            local filename=$(basename "$url")
+            if [ -f "$download_dir/$filename" ] && [ -s "$download_dir/$filename" ]; then
+                ((successful++))
+            fi
+        done
+        
+        log "SUCCESS" "Successfully downloaded $successful/${#download_queue[@]} packages"
+        return 0
+    fi
 }
 
 # Initialize the script
