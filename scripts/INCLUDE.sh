@@ -14,6 +14,7 @@ CONFIG=(
     ["LOG_FILE"]="script_execution.log"
     ["TIMEOUT_SECONDS"]=60
     ["CONNECTION_TIMEOUT"]=30
+    ["PARALLEL_DOWNLOADS"]=4
 )
 
 # Cleanup function
