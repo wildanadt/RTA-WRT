@@ -467,12 +467,9 @@ jobs:
           archive_ext=$([ "${CURVER}" == "24" ] && echo "tar.zst" || echo "tar.xz")
 
           # Download image builder
-          chmod +x $GITHUB_WORKSPACE/origin/scripts/INCLUDE.sh
-          . ./$GITHUB_WORKSPACE/origin/scripts/INCLUDE.sh
           RELEASE="${DOWNLOAD_BASE}/releases/${BRANCH}/targets/${TARGET_SYSTEM}/${BASE}-imagebuilder-${BRANCH}-${TARGET_NAME}.Linux-x86_64.${archive_ext}"
-          log "INFO" "Downloading from: $RELEASE"
-          ariadl "$RELEASE"
-          # wget --progress=dot:giga "$RELEASE"
+          echo "Downloading from: $RELEASE"
+          wget --progress=dot:giga "$RELEASE"
 
           # Extract archive based on extension
           case "${archive_ext}" in
