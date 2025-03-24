@@ -33,7 +33,7 @@ perlbase-re perlbase-scalar perlbase-selectsaver perlbase-socket perlbase-symbol
 
 # Modem and UsbLAN Driver
 PACKAGES+=" kmod-usb-net-rtl8150 kmod-usb-net-rtl8152 kmod-usb-net-asix kmod-usb-net-asix-ax88179"
-PACKAGES+=" kmod-mii kmod-usb-net kmod-usb-wdm kmod-usb-net-qmi-wwan kmod-wwan kmod-usb-net-qmi-wwan-fibocom kmod-usb-net-qmi-wwan-quectel uqmi luci-proto-qmi \
+PACKAGES+=" kmod-mii kmod-usb-net kmod-usb-wdm kmod-usb-net-qmi-wwan kmod-wwan uqmi luci-proto-qmi \
 kmod-usb-net-cdc-ether kmod-usb-serial-option kmod-usb-serial kmod-usb-serial-wwan qmi-utils \
 kmod-usb-serial-qualcomm kmod-usb-acm kmod-usb-net-cdc-ncm kmod-usb-net-cdc-mbim umbim \
 modemmanager  modemmanager-rpcd luci-proto-modemmanager libmbim libqmi usbutils luci-proto-mbim luci-proto-ncm \
@@ -48,7 +48,7 @@ PACKAGES+=" atinout modemband luci-app-modemband sms-tool luci-app-sms-tool-js l
 # Tunnel option
 OPENCLASH+="coreutils-nohup bash dnsmasq-full curl ca-certificates ipset ip-full libcap libcap-bin ruby ruby-yaml kmod-tun kmod-inet-diag unzip kmod-nft-tproxy luci-compat luci luci-base luci-app-openclash"
 NIKKI+="nikki luci-app-nikki"
-PASSWALL+="chinadns-ng resolveip dns2socks dns2tcp ipt2socks microsocks tcping xray-core xray-plugin luci-app-passwall"
+PASSWALL+="chinadns-ng dns2socks dns2tcp geoview gn hysteria ipt2socks microsocks naiveproxy pdnsd-alt shadowsocks-libev shadowsocks-rust shadowsocksr-libev simple-obfs sing-box ssocks tcping trojan trojan-plus tuic-client v2ray-core v2ray-plugin xray-core xray-plugin v2ray-geoip v2ray-geosite luci-app-passwall"
 
 # Tunnel options handling
 handle_tunnel_option() {
