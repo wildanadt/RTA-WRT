@@ -48,7 +48,7 @@ PACKAGES+=" atinout modemband luci-app-modemband sms-tool luci-app-sms-tool-js l
 # Tunnel option
 OPENCLASH+="coreutils-nohup bash dnsmasq-full curl ca-certificates ipset ip-full libcap libcap-bin ruby ruby-yaml kmod-tun kmod-inet-diag unzip kmod-nft-tproxy luci-compat luci luci-base luci-app-openclash"
 NIKKI+="nikki luci-app-nikki"
-PASSWALL+="chinadns-ng dns2socks dns2tcp geoview gn hysteria ipt2socks microsocks naiveproxy pdnsd-alt shadowsocks-libev shadowsocks-rust shadowsocksr-libev simple-obfs sing-box ssocks tcping trojan trojan-plus tuic-client v2ray-core v2ray-plugin xray-core xray-plugin v2ray-geoip v2ray-geosite luci-app-passwall"
+PASSWALL+="chinadns-ng dns2socks dns2tcp geoview hysteria ipt2socks microsocks naiveproxy simple-obfs sing-box tcping trojan-plus tuic-client v2ray-core v2ray-plugin xray-core xray-plugin v2ray-geoip v2ray-geosite luci-app-passwall"
 
 # Tunnel options handling
 handle_tunnel_option() {
