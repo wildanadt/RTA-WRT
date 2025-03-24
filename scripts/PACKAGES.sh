@@ -12,8 +12,8 @@ fi
 declare -A REPOS
 REPOS+=(
     ["KIDDIN9"]="https://dl.openwrt.ai/releases/24.10/packages/${ARCH_3}/kiddin9"
-    ["IMMORTALWRT"]="https://downloads.immortalwrt.org/releases/packages-${VEROP}/${ARCH_3}"
-    ["OPENWRT"]="https://downloads.openwrt.org/releases/packages-${VEROP}/${ARCH_3}"
+    ["IMMORTALWRT"]="https://downloads.immortalwrt.org/releases/packages-24.10/${ARCH_3}"
+    ["OPENWRT"]="https://downloads.openwrt.org/releases/packages-24.10/${ARCH_3}"
     ["GSPOTX2F"]="https://github.com/gSpotx2f/packages-openwrt/raw/refs/heads/master/current"
     ["FANTASTIC"]="https://fantastic-packages.github.io/packages/releases/${VEROP}/packages/mipsel_24kc"
 )
