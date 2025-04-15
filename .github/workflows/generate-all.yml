@@ -618,42 +618,43 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-
+      
       - name: Combine artifacts
         run: |
-          cat artifacts/*/artifacts.txt > combined_artifacts.txt
-
+          mkdir -p artifacts
+          find artifacts -name "artifacts.txt" -exec cat {} \; > combined_artifacts.txt
+          cat combined_artifacts.txt || echo "No artifacts found"
+      
       - name: Telegram Notification
         run: |
           BOT_TOKEN="${{ secrets.BOT_TOKEN }}"
-          CHAT_ID=${{ secrets.CHAT_ID }}"
+          CHAT_ID="${{ secrets.CHAT_ID }}"
           THREAD_ID="734"
-
+          
           # Build parameters
           BUILD="${{ needs.prebuild.outputs.type }}"
           SOURCE="${{ needs.prebuild.outputs.base }}"
           VERSION="${{ needs.prebuild.outputs.branch }}"
           BUILD_TYPE="${{ env.TUNNEL }}"
           FOR="${{ github.ref_name }}"
-
+          RELEASE_TAG="${{ needs.prebuild.outputs.release_tag }}"
+          
           # Set image URL based on source
           if [ "$SOURCE" = "immortalwrt" ]; then
               image_url="https://avatars.githubusercontent.com/u/53193414?s=200&v=4"
           else
               image_url="https://avatars.githubusercontent.com/u/2528830?s=200&v=4"
           fi
-
+          
           # Generate message based on branch
           if [ "$FOR" = "main" ]; then
               message="━━━━━━━━━━━━━━━━━━━━━━
           🎯 *RTA-WRT Firmware Update*
-          ✅ _Stable Release_
-
+          ✅ *Stable Release*
           🔹 *Build:* ${BUILD}
           🔹 *Version:* ${SOURCE}:${VERSION}
           🔹 *Date:* $(date '+%d-%m-%Y %H:%M:%S')
           🔹 *Build Type:* ${BUILD_TYPE}
-
           📌 *Release Notes:*
           • Stable version release
           • Recommended for all users
@@ -662,13 +663,11 @@ jobs:
           else
               message="━━━━━━━━━━━━━━━━━━━━━━
           🚀 *RTA-WRT Firmware Update*
-          🌟 _Development Release_
-
+          🌟 *Development Release*
           🔹 *Build:* ${BUILD}
           🔹 *Version:* ${SOURCE}:${VERSION}
           🔹 *Date:* $(date '+%d-%m-%Y %H:%M:%S')
           🔹 *Build Type:* ${BUILD_TYPE}
-
           📌 *Development Notes:*
           • Suitable for testing
           • Please provide feedback
@@ -676,31 +675,46 @@ jobs:
           • Your feedback helps development
           ━━━━━━━━━━━━━━━━━━━━━━"
           fi
-
+          
+          # Initialize buttons as empty array
           BUTTONS='[]'
-
-          while IFS='|' read -r target_name file_url || [[ -n "$target_name" ]]; do
-              target_name=$(echo "$target_name" | xargs)
-              file_url=$(echo "$file_url" | xargs)
-
-              if [[ -n "$target_name" && -n "$file_url" ]]; then
-                  echo "Menambahkan tombol: $target_name -> $file_url"
-                  BUTTONS=$(echo "$BUTTONS" | jq --arg name "$target_name" --arg url "$file_url" \
-                      '. += [[{"text": "📥 \($name)", "url": $url}]]')
-              fi
-          done < combined_artifacts.txt
-
+          
+          # Check if combined_artifacts.txt exists and is not empty
+          if [ -s combined_artifacts.txt ]; then
+              while IFS='|' read -r target_name file_url || [[ -n "$target_name" ]]; do
+                  target_name=$(echo "$target_name" | xargs)
+                  file_url=$(echo "$file_url" | xargs)
+                  if [[ -n "$target_name" && -n "$file_url" ]]; then
+                      echo "Adding button: $target_name -> $file_url"
+                      BUTTONS=$(echo "$BUTTONS" | jq --arg name "$target_name" --arg url "$file_url" \
+                          '. += [[{"text": "📥 \($name)", "url": $url}]]')
+                  fi
+              done < combined_artifacts.txt
+          else
+              echo "No artifacts found or file is empty"
+          fi
+          
           # Add a button to view the release
-          BUTTONS=$(echo "$BUTTONS" | jq '. += [[{"text": "🔗 View Release", "url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/tag/${{ needs.prebuild.outputs.release_tag }}"}]]')
-
+          if [ -n "$RELEASE_TAG" ]; then
+              VIEW_URL="https://github.com/rizkikotet-dev/RTA-WRT/releases/tag/${RELEASE_TAG}"
+              BUTTONS=$(echo "$BUTTONS" | jq --arg url "$VIEW_URL" \
+                  '. += [[{"text": "🔗 View Release", "url": $url}]]')
+          fi
+          
           # Send message with photo
-          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto" \
+          RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto" \
               -d "chat_id=${CHAT_ID}" \
               -d "photo=${image_url}" \
               -d "caption=${message}" \
               -d "parse_mode=Markdown" \
               -d "message_thread_id=${THREAD_ID}" \
-              -d "reply_markup={\"inline_keyboard\":$BUTTONS}"
-
-          # Clean up
-          rm -f combined_artifacts.txt
+              -d "reply_markup={\"inline_keyboard\":$BUTTONS}")
+          
+          # Check if the message was sent successfully
+          if echo "$RESPONSE" | jq -e '.ok == true' > /dev/null; then
+              echo "Telegram notification sent successfully!"
+          else
+              echo "Failed to send Telegram notification:"
+              echo "$RESPONSE" | jq '.'
+              exit 1
+          fi
