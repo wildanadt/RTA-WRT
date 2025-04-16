@@ -1,7 +1,6 @@
 #!/bin/sh
 
 # Improved OpenWrt Router Setup Script
-# Creates a comprehensive system setup with better error handling and security
 
 # Create a log file with timestamp
 LOGFILE="/root/setup_$(date +%Y%m%d_%H%M%S).log"
@@ -117,35 +116,6 @@ print_system_info() {
   log "STEP" "==================== CONFIGURATION START ===================="
 }
 
-# Create comprehensive backup of configs
-create_backup() {
-  log "STEP" "Creating comprehensive backup..."
-  
-  # Create backup directory with date stamp
-  local BACKUP_DIR="/root/config_backup_$(date +%Y%m%d_%H%M%S)"
-  mkdir -p "$BACKUP_DIR"
-  check_command "Create backup directory"
-  
-  # Backup various configurations
-  cp -r /etc/config/* "$BACKUP_DIR/config/"
-  cp /etc/openwrt_release "$BACKUP_DIR/"
-  cp /etc/passwd "$BACKUP_DIR/"
-  cp /etc/shadow "$BACKUP_DIR/"
-  cp /etc/rc.local "$BACKUP_DIR/"
-  cp /etc/firewall.user "$BACKUP_DIR/" 2>/dev/null
-  cp /etc/sysctl.conf "$BACKUP_DIR/"
-  cp /etc/hosts "$BACKUP_DIR/"
-  
-  # Backup installed packages list
-  opkg list-installed > "$BACKUP_DIR/installed_packages.txt"
-  
-  # Create tarball of backup
-  tar -czf "${BACKUP_DIR}.tar.gz" "$BACKUP_DIR" 2>/dev/null
-  rm -rf "$BACKUP_DIR" # Remove the uncompressed directory
-  
-  log "INFO" "Backup created at ${BACKUP_DIR}.tar.gz"
-}
-
 # Firmware customization function
 customize_firmware() {
   log "STEP" "Customizing firmware information..."
@@ -215,24 +185,9 @@ check_tunnel_apps() {
 setup_root_password() {
   log "STEP" "Setting up root password securely..."
   
-  # Generate random password if no custom password provided
   local PASSWORD="rtawrt"
-  local SALT=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)
-  local HASHED_PASSWORD=$(echo "$PASSWORD" | openssl passwd -1 -stdin -salt "$SALT")
-  
-  if [ -n "$HASHED_PASSWORD" ]; then
-    # Set password using shadow format directly - more secure than echo | passwd
-    sed -i "s|^root:[^:]*:|root:$HASHED_PASSWORD:|" /etc/shadow
-    check_command "Set root password"
-    
-    # Save password to a secure file for reference
-    echo "Root password: $PASSWORD" > /root/.credentials
-    chmod 600 /root/.credentials
-    
-    log "WARNING" "Default password set. Please change it as soon as possible with the 'passwd' command!"
-  else
-    log "ERROR" "Failed to set root password - please set manually"
-  fi
+  (echo "$PASSWORD"; sleep 1; echo "$PASSWORD") | passwd > /dev/null
+  check_command "Setting root password"
 }
 
 # Setup time zone and NTP servers
@@ -342,124 +297,36 @@ setup_wireless() {
   # Backup original wireless config
   cp /etc/config/wireless /etc/config/wireless.bak 2>/dev/null
   
-  local devices=$(ls /sys/class/ieee80211/ 2>/dev/null)
-  local device_count=0
-  
-  if [ -z "$devices" ]; then
-    log "WARNING" "No wireless devices detected"
-    return 1
-  fi
-  
-  # Reset wireless config
-  rm -f /etc/config/wireless
-  wifi config
-  
-  for device in $devices; do
-    local dev_path="/sys/class/ieee80211/$device"
-    local phy_idx=$(echo $device | sed 's/phy//')
-    local hwmode=$(iw phy$phy_idx info 2>/dev/null | grep -i "band" | head -1)
-    
-    # Determine the band (2.4GHz or 5GHz)
-    if echo "$hwmode" | grep -q "5"; then
-      log "INFO" "5GHz wireless device detected: $device"
-      
-      safe_uci set "wireless.radio$device_count" "wifi-device"
-      safe_uci set "wireless.radio$device_count.type" "mac80211"
-      
-      # More reliable device path detection
-      if [ -d "/sys/devices/platform/soc/$device" ]; then
-        safe_uci set "wireless.radio$device_count.path" "platform/soc/$device"
-      else
-        local detected_path=$(find /sys/devices -name "$device" | head -1)
-        if [ -n "$detected_path" ]; then
-          safe_uci set "wireless.radio$device_count.path" "$detected_path"
-        fi
-      fi
-      
-      safe_uci set "wireless.radio$device_count.band" "5g"
-      safe_uci set "wireless.radio$device_count.channel" "36"
-      safe_uci set "wireless.radio$device_count.htmode" "VHT80"
-      safe_uci set "wireless.radio$device_count.country" "ID"
-      safe_uci set "wireless.radio$device_count.cell_density" "0"
-      safe_uci set "wireless.radio$device_count.disabled" "0"
-      
-      # Configure interface for 5GHz
-      safe_uci set "wireless.default_radio$device_count" "wifi-iface"
-      safe_uci set "wireless.default_radio$device_count.device" "radio$device_count"
-      safe_uci set "wireless.default_radio$device_count.network" "lan"
-      safe_uci set "wireless.default_radio$device_count.mode" "ap"
-      safe_uci set "wireless.default_radio$device_count.ssid" "RTA-WRT_5G"
-      safe_uci set "wireless.default_radio$device_count.encryption" "psk2"
-      safe_uci set "wireless.default_radio$device_count.key" "rtawrt123"
-      safe_uci set "wireless.default_radio$device_count.disabled" "0"
-    else
-      log "INFO" "2.4GHz wireless device detected: $device"
-      
-      safe_uci set "wireless.radio$device_count" "wifi-device"
-      safe_uci set "wireless.radio$device_count.type" "mac80211"
-      
-      # More reliable device path detection
-      if [ -d "/sys/devices/platform/soc/$device" ]; then
-        safe_uci set "wireless.radio$device_count.path" "platform/soc/$device"
-      else
-        local detected_path=$(find /sys/devices -name "$device" | head -1)
-        if [ -n "$detected_path" ]; then
-          safe_uci set "wireless.radio$device_count.path" "$detected_path"
-        fi
-      fi
-      
-      safe_uci set "wireless.radio$device_count.band" "2g"
-      safe_uci set "wireless.radio$device_count.channel" "auto"
-      safe_uci set "wireless.radio$device_count.htmode" "HT20"
-      safe_uci set "wireless.radio$device_count.country" "ID"
-      safe_uci set "wireless.radio$device_count.cell_density" "0"
-      safe_uci set "wireless.radio$device_count.disabled" "0"
-      
-      # Configure interface for 2.4GHz
-      safe_uci set "wireless.default_radio$device_count" "wifi-iface"
-      safe_uci set "wireless.default_radio$device_count.device" "radio$device_count"
-      safe_uci set "wireless.default_radio$device_count.network" "lan"
-      safe_uci set "wireless.default_radio$device_count.mode" "ap"
-      safe_uci set "wireless.default_radio$device_count.ssid" "RTA-WRT_2G"
-      safe_uci set "wireless.default_radio$device_count.encryption" "psk2"
-      safe_uci set "wireless.default_radio$device_count.key" "rtawrt123"
-      safe_uci set "wireless.default_radio$device_count.disabled" "0"
-    fi
-    
-    device_count=$((device_count + 1))
-  done
-  
-  # Commit and restart wireless
-  if [ $device_count -gt 0 ]; then
-    commit_uci "wireless"
-    
-    # Gracefully restart wireless
-    log "INFO" "Restarting wireless subsystem..."
-    wifi down
-    sleep 2
-    wifi up
-    log "INFO" "$device_count wireless devices configured"
-    
-    # Add wireless maintenance scripts if not already present
-    if ! grep -q "wifi up" /etc/rc.local; then
-      local RC_LOCAL_BAK="/etc/rc.local.bak"
-      cp /etc/rc.local "$RC_LOCAL_BAK"
-      sed -i '/exit 0/i # Wireless maintenance' /etc/rc.local
-      sed -i '/exit 0/i sleep 15 && wifi up' /etc/rc.local
-      log "INFO" "Added wireless maintenance to rc.local"
-    fi
-    
-    if ! grep -q "wifi up" /etc/crontabs/root; then
-      echo "# Wireless maintenance - Auto restart every 12 hours" >> /etc/crontabs/root
-      echo "0 */12 * * * wifi down && sleep 5 && wifi up" >> /etc/crontabs/root
-      service cron restart
-      log "INFO" "Added wireless maintenance to crontab"
-    fi
-    
-    return 0
+  safe_uci set "wireless.@wifi-device[0].disabled" "0"
+  safe_uci set "wireless.@wifi-iface[0].disabled" "0"
+  safe_uci set "wireless.@wifi-iface[0].encryption" "none"
+  safe_uci set "wireless.@wifi-device[0].country" "ID"
+  if grep -q "Raspberry Pi 4\|Raspberry Pi 3" /proc/cpuinfo; then
+    safe_uci set "wireless.@wifi-iface[0].ssid" "RTA-WRT_5G"
+    safe_uci set "wireless.@wifi-device[0].channel" "149"
+    safe_uci set "wireless.radio0.htmode" "HT40"
+    safe_uci set "wireless.radio0.band" "5g"
   else
-    log "WARNING" "No wireless devices configured"
-    return 1
+    safe_uci set "wireless.@wifi-iface[0].ssid" "RTA-WRT_2G"
+    safe_uci set "wireless.@wifi-device[0].channel" "1"
+    safe_uci set "wireless.@wifi-device[0].band" "2g"
+  fi
+  commit_uci wireless
+  wifi reload && wifi up
+  if iw dev | grep -q Interface; then
+    if grep -q "Raspberry Pi 4\|Raspberry Pi 3" /proc/cpuinfo; then
+      if ! grep -q "wifi up" /etc/rc.local; then
+        sed -i '/exit 0/i # remove if you dont use wireless' /etc/rc.local
+        sed -i '/exit 0/i sleep 10 && wifi up' /etc/rc.local
+      fi
+      if ! grep -q "wifi up" /etc/crontabs/root; then
+        echo "# remove if you dont use wireless" >> /etc/crontabs/root
+        echo "0 */12 * * * wifi down && sleep 5 && wifi up" >> /etc/crontabs/root
+        service cron restart
+      fi
+    fi
+  else
+    log "INFO" "No wireless device detected."
   fi
 }
 
@@ -488,14 +355,6 @@ setup_package_management() {
   else
     log "WARNING" "Could not determine system architecture, skipping custom repository"
   fi
-  
-  # Update package lists
-#   opkg update
-#   if [ $? -ne 0 ]; then
-#     log "WARNING" "Failed to update package lists"
-#   else
-#     log "INFO" "Package lists updated successfully"
-#   fi
 }
 
 # UI configuration function
@@ -686,22 +545,6 @@ setup_shell_environment() {
   sed -i 's/\[ -f \/etc\/banner \] && cat \/etc\/banner/#&/' /etc/profile
   sed -i 's/\[ -n "$FAILSAFE" \] && cat \/etc\/banner.failsafe/#&/' /etc/profile
   
-  # Add custom aliases to profile
-  if ! grep -q "Custom aliases" /etc/profile; then
-    cat << 'EOF' >> /etc/profile
-
-# Custom aliases
-alias ll='ls -la'
-alias mem='free -h'
-alias df='df -h'
-alias update='opkg update'
-alias net='ifconfig'
-alias restart='reboot'
-alias ping='ping -c 4'
-EOF
-    log "INFO" "Added custom aliases to profile"
-  fi
-  
   # Make utility scripts executable
   for script in /sbin/sync_time.sh /sbin/free.sh /usr/bin/clock /usr/bin/openclash.sh /usr/bin/cek_sms.sh; do
     if [ -f "$script" ]; then
@@ -709,16 +552,6 @@ EOF
       log "INFO" "Made $script executable"
     fi
   done
-  
-  # Custom prompt with colors
-  if ! grep -q "PS1=" /etc/profile || ! grep -q "RTA-WRT" /etc/profile; then
-    cat << 'EOF' >> /etc/profile
-
-# Custom colored prompt
-export PS1='\[\033[01;32m\]RTA-WRT\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]# '
-EOF
-    log "INFO" "Added custom prompt to profile"
-  fi
 }
 
 # Function to configure OpenClash if installed
@@ -879,25 +712,7 @@ setup_tinyfm() {
   # Set permissions
   chmod 755 /www/tinyfm
   
-  # Add .htaccess protection if PHP is available
-  if is_package_installed "php8" || is_package_installed "php7"; then
-    cat << 'EOF' > /www/tinyfm/.htaccess
-AuthType Basic
-AuthName "Restricted Area"
-AuthUserFile /etc/httpd.htpasswd
-Require valid-user
-EOF
-    
-    # Create password file if it doesn't exist
-    if [ ! -f "/etc/httpd.htpasswd" ]; then
-      echo "admin:\$apr1\$xyz\$1hO6cGk.KwEL11RKr3vKG." > /etc/httpd.htpasswd
-      log "INFO" "Created basic auth for TinyFM (user: admin, password: admin)"
-    fi
-    
-    log "INFO" "TinyFM setup complete with authentication"
-  else
-    log "INFO" "TinyFM setup complete"
-  fi
+  log "INFO" "TinyFM setup complete"
 }
 
 # Function to restore system information script
@@ -938,12 +753,9 @@ complete_setup() {
   log "INFO" "Setup Summary:"
   log "INFO" "- System hostname: RTA-WRT"
   log "INFO" "- LAN IP: 192.168.1.1"
-  log "INFO" "- WiFi Enabled: Yes (password: rtawrt123)"
-  log "INFO" "- Root password set: Yes (see /root/.credentials)"
+  log "INFO" "- WiFi Enabled: ????"
+  log "INFO" "- Root password set: yes (password: rtawrt)"
   log "INFO" "- Timezone: Asia/Jakarta"
-  
-  # List installed packages
-  log "INFO" "Installed packages: $(opkg list-installed | wc -l)"
   
   # Remove temporary files
   log "INFO" "Cleaning up and finalizing..."
@@ -991,7 +803,6 @@ main() {
   
   # Execute functions in sequence with error handling
   print_system_info
-  create_backup
   customize_firmware
   check_tunnel_apps
   setup_root_password
