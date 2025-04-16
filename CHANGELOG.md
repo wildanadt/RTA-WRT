@@ -1,5 +1,12 @@
 # What's New!
 
+**Changelog Firmware** (16-04-2025)
+
+- New OpenWrt Update To 24.10.1
+- Fix Navbar
+- Improve Script Startup
+- etc
+
 **Changelog Firmware** (10-03-2025)
 
 - Add support for new hardware components

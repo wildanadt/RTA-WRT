@@ -1,4 +1,4 @@
-name: Generate RTA-WRT Firmware
+name: Generate RTA-WRT All Firmware
 
 on:
   workflow_dispatch:
@@ -6,16 +6,16 @@ on:
       release_branch:
         description: "Select the release branch:"
         required: true
-        default: "openwrt:24.10.0"
+        default: "openwrt:24.10.1"
         type: choice
         options:
-          - openwrt:24.10.0
+          - openwrt:24.10.1
           - openwrt:23.05.5
           - immortalwrt:24.10.0
           - immortalwrt:23.05.4
       target:
         description: "Select device board"
-        required: true
+        required: false
         default: "all-device"
         type: choice
         options:
@@ -23,6 +23,45 @@ on:
           - Raspberry Pi 3B
           - Raspberry Pi 4B
           - x86-64
+          - OPHUB Amlogic s905
+          - OPHUB Amlogic s905 Beelink Mini
+          - OPHUB Amlogic s905 MXQ Pro Plus
+          - OPHUB Amlogic s905W
+          - OPHUB Amlogic s905W W95
+          - OPHUB Amlogic s905W X96 Mini
+          - OPHUB Amlogic s905W X96W
+          - OPHUB Amlogic s905X HG680P
+          - OPHUB Amlogic s905X B860H
+          - OPHUB Amlogic s905X Nexbox A95X
+          - OPHUB Amlogic s905X2
+          - OPHUB Amlogic s905X2 KM3
+          - OPHUB Amlogic s905X2 X96 Max 2G
+          - OPHUB Amlogic s905X3
+          - OPHUB Amlogic s905X3 H96 Max
+          - OPHUB Amlogic s905X3 HK1
+          - OPHUB Amlogic s905X3 X96 Max
+          - OPHUB Amlogic s912
+          - OPHUB Amlogic s912 H96 Pro Plus
+          - OPHUB Amlogic s912 X92
+          - OPHUB Rockchip rk3318 H96-MAX
+          - ULO Amlogic s905X HG680P
+          - ULO Amlogic s905X B860H
+          - ULO Amlogic s905X2
+          - ULO Amlogic s905X3
+          - ULO Amlogic s905X4
+          - ULO Allwinner H5 Orange Pi Zero Plus2
+          - ULO Allwinner H5 Orange Pi Zero Plus
+          - ULO Allwinner H5 Orange Pi Prime
+          - ULO Allwinner H5 Orange Pi PC2
+          - ULO Allwinner H6 Orange Pi Lite2
+          - ULO Allwinner H6 Orange Pi 1 Plus
+          - ULO Allwinner H6 Orange Pi 3
+          - ULO Allwinner H6 Orange Pi 3 LTS
+          - ULO Allwinner H616 Orange Pi Zero2
+          - ULO Allwinner H618 Orange Pi Zero2W
+          - ULO Allwinner H618 Orange Pi Zero3
+          - ULO Rockchip rk3566 Orange Pi 3B
+          - ULO Rockchip rk3588s Orange Pi 5
       tunnel:
         description: "Select VPN Client app:"
         required: true
@@ -39,7 +78,7 @@ on:
           - no-tunnel
       clean:
         description: "Do 'make clean' for each run"
-        required: true
+        required: false
         default: "true"
         type: boolean
 
@@ -58,7 +97,6 @@ jobs:
     name: ${{ github.event.inputs.release_branch }}
     outputs:
       target: ${{ steps.set-matrix.outputs.target }}
-      type: ${{ steps.setupenv.outputs.type }}
       base: ${{ steps.setupenv.outputs.base }}
       branch: ${{ steps.setupenv.outputs.branch }}
       verop: ${{ steps.setupenv.outputs.verop }}
@@ -83,7 +121,46 @@ jobs:
             "target": [
               "Raspberry Pi 3B",
               "Raspberry Pi 4B",
-              "x86-64"
+              "x86-64",
+              "OPHUB Amlogic s905",
+              "OPHUB Amlogic s905 Beelink Mini",
+              "OPHUB Amlogic s905 MXQ Pro Plus",
+              "OPHUB Amlogic s905W",
+              "OPHUB Amlogic s905W W95",
+              "OPHUB Amlogic s905W X96 Mini",
+              "OPHUB Amlogic s905W X96W",
+              "OPHUB Amlogic s905X HG680P",
+              "OPHUB Amlogic s905X B860H",
+              "OPHUB Amlogic s905X Nexbox A95X",
+              "OPHUB Amlogic s905X2",
+              "OPHUB Amlogic s905X2 KM3",
+              "OPHUB Amlogic s905X2 X96 Max 2G",
+              "OPHUB Amlogic s905X3",
+              "OPHUB Amlogic s905X3 H96 Max",
+              "OPHUB Amlogic s905X3 HK1",
+              "OPHUB Amlogic s905X3 X96 Max",
+              "OPHUB Amlogic s912",
+              "OPHUB Amlogic s912 H96 Pro Plus",
+              "OPHUB Amlogic s912 X92",
+              "OPHUB Rockchip rk3318 H96-MAX",
+              "ULO Amlogic s905X HG680P",
+              "ULO Amlogic s905X B860H",
+              "ULO Amlogic s905X2",
+              "ULO Amlogic s905X3",
+              "ULO Amlogic s905X4",
+              "ULO Allwinner H5 Orange Pi Zero Plus2",
+              "ULO Allwinner H5 Orange Pi Zero Plus",
+              "ULO Allwinner H5 Orange Pi Prime",
+              "ULO Allwinner H5 Orange Pi PC2",
+              "ULO Allwinner H6 Orange Pi Lite2",
+              "ULO Allwinner H6 Orange Pi 1 Plus",
+              "ULO Allwinner H6 Orange Pi 3",
+              "ULO Allwinner H6 Orange Pi 3 LTS",
+              "ULO Allwinner H616 Orange Pi Zero2",
+              "ULO Allwinner H618 Orange Pi Zero2W",
+              "ULO Allwinner H618 Orange Pi Zero3",
+              "ULO Rockchip rk3566 Orange Pi 3B",
+              "ULO Rockchip rk3588s Orange Pi 5"
             ]
           }
           EOJ
@@ -97,13 +174,10 @@ jobs:
 
           echo "Selected tunnel option: [ ${{ github.event.inputs.tunnel }} ]"
 
-      - name: Setup Environment
+      - name: Setup Release Environment
         id: setupenv
         run: |
           sudo timedatectl set-timezone "${{ env.TZ }}"
-
-          TYPE="NON-AMLOGIC"
-          echo "TYPE=$TYPE" >> $GITHUB_OUTPUT
 
           BASE="${RELEASE_BRANCH%:*}"
           BRANCH="${RELEASE_BRANCH#*:}"
@@ -123,12 +197,12 @@ jobs:
           echo "DATEMONTH=$DATEMONTH" >> $GITHUB_OUTPUT
 
           if [ "${BASE}" == "openwrt" ]; then
-            RELEASE_NAME="RTA-WRT_OpenWRT-${BRANCH}-${DATE}"
+            RELEASE_NAME="RTA-WRT-OpenWRT-${BRANCH}-${DATE}"
             RELEASE_TAG="rtawrt-openwrt-${BRANCH}-${DATE}"
             echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
             echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_OUTPUT
           else
-            RELEASE_NAME="RTA-WRT_ImmortalWRT-${BRANCH}-${DATE}"
+            RELEASE_NAME="RTA-WRT-ImmortalWRT-${BRANCH}-${DATE}"
             RELEASE_TAG="rtawrt-immortalwrt-${BRANCH}-${DATE}"
             echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
             echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_OUTPUT
@@ -155,6 +229,9 @@ jobs:
             [![Group](https://img.shields.io/badge/Telegram-Group-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/backup_rtawrt)
             [![Personal](https://img.shields.io/badge/Telegram-Personal-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/RizkiKotet)
 
+            ## NOTES
+            `Amlogic s905x Support Mod SDCard`
+
             ## 📝 Changelog Firmware
             [**Changelog Firmware**](https://github.com/rizkikotet-dev/RTA-WRT/blob/${{ github.ref_name }}/CHANGELOG.md "**Changelog Firmware**")
           generate_release_notes: true
@@ -163,8 +240,8 @@ jobs:
     name: Build ${{ matrix.target }} Firmware
     needs: prebuild
     runs-on: ubuntu-22.04
+    continue-on-error: true
     env:
-      TYPE: ${{ needs.prebuild.outputs.type }}
       BASE: ${{ needs.prebuild.outputs.base }}
       BRANCH: ${{ needs.prebuild.outputs.branch }}
       VEROP: ${{ needs.prebuild.outputs.verop }}
@@ -183,19 +260,19 @@ jobs:
       - name: Initialization environment
         id: init
         run: |
-          docker rmi $(docker images -q) 2>/dev/null
-          [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
-          sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d /usr/local/lib/android 2>/dev/null
-          sudo swapoff -a
-          sudo rm -f /swapfile /mnt/swapfile
+          # docker rmi $(docker images -q) 2>/dev/null
+          # [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
+          # sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d /usr/local/lib/android 2>/dev/null
+          # sudo swapoff -a
+          # sudo rm -f /swapfile /mnt/swapfile
           sudo -E apt-get -y update
-          sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* powershell openjdk* mongodb* moby* || true
+          # sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* powershell openjdk* mongodb* moby* || true
           sudo -E apt-get -y install $(curl -fsSL https://tinyurl.com/ubuntu2204-make-openwrt)
-          sudo -E systemctl daemon-reload
-          sudo -E apt-get -y autoremove --purge
-          sudo -E apt-get clean
-          sudo sed -i '/NVM_DIR/d;/skel/d' /root/{.bashrc,.profile}
-          sudo rm -rf ~/{.cargo,.dotnet,.rustup}
+          # sudo -E systemctl daemon-reload
+          # sudo -E apt-get -y autoremove --purge
+          # sudo -E apt-get clean
+          # sudo sed -i '/NVM_DIR/d;/skel/d' /root/{.bashrc,.profile}
+          # sudo rm -rf ~/{.cargo,.dotnet,.rustup}
           sudo timedatectl set-timezone "${{ env.TZ }}"
           echo "status=success" >> ${GITHUB_OUTPUT}
 
@@ -210,46 +287,172 @@ jobs:
         run: |
           MATRIXTARGET="${{ matrix.target }}"
           echo "MATRIXTARGET=$MATRIXTARGET" >> $GITHUB_ENV
-
           NAMA_MODIFIED=$(echo $MATRIXTARGET | sed 's/ /-/g')
           echo "NAMA_MODIFIED=$NAMA_MODIFIED" >> $GITHUB_ENV
 
+          # Set OpenWrt base
           case $BASE in
-            openwrt)
-              OP_BASE="OpenWrt"
-              echo "OP_BASE=$OP_BASE" >> $GITHUB_ENV
-              ;;
-            immortalwrt)
-              OP_BASE="ImmortalWrt"
-              echo "OP_BASE=$OP_BASE" >> $GITHUB_ENV
-              ;;
+            openwrt)     OP_BASE="OpenWrt" ;;
+            immortalwrt) OP_BASE="ImmortalWrt" ;;
           esac
+          echo "OP_BASE=$OP_BASE" >> $GITHUB_ENV
 
-          # Target system configurations
+          # Common configuration function
+          configure_target() {
+            local profile=$1 target_system=$2 target_name=$3 arch1=$4 arch2=$5 arch3=$6 type=$7
+            echo "PROFILE=$profile" >> $GITHUB_ENV
+            echo "TARGET_SYSTEM=$target_system" >> $GITHUB_ENV
+            echo "TARGET_NAME=$target_name" >> $GITHUB_ENV
+            echo "ARCH_1=$arch1" >> $GITHUB_ENV
+            echo "ARCH_2=$arch2" >> $GITHUB_ENV
+            echo "ARCH_3=$arch3" >> $GITHUB_ENV
+            echo "TYPE=$type" >> $GITHUB_ENV
+          }
+
+          # Configure OPHUB/ULO common settings
+          configure_arm_device() {
+            local target_build=$1 kernel=$2 type=$3
+            echo "TARGET_BUILD=$target_build" >> $GITHUB_ENV
+            echo "KERNEL=$kernel" >> $GITHUB_ENV
+            configure_target "generic" "armsr/armv8" "armsr-armv8" "arm64" "aarch64" "aarch64_generic" $type
+          }
+
+          # Handle device configurations
           case "$MATRIXTARGET" in
+            # Standard devices
             "Raspberry Pi 3B")
-              echo "PROFILE=rpi-3" >> $GITHUB_ENV
-              echo "TARGET_SYSTEM=bcm27xx/bcm2710" >> $GITHUB_ENV
-              echo "TARGET_NAME=bcm27xx-bcm2710" >> $GITHUB_ENV
-              echo "ARCH_1=armv7" >> $GITHUB_ENV
-              echo "ARCH_2=aarch64" >> $GITHUB_ENV
-              echo "ARCH_3=aarch64_cortex-a53" >> $GITHUB_ENV
+              configure_target "rpi-3" "bcm27xx/bcm2710" "bcm27xx-bcm2710" "armv7" "aarch64" "aarch64_cortex-a53" "NON-REPACK"
               ;;
             "Raspberry Pi 4B")
-              echo "PROFILE=rpi-4" >> $GITHUB_ENV
-              echo "TARGET_SYSTEM=bcm27xx/bcm2711" >> $GITHUB_ENV
-              echo "TARGET_NAME=bcm27xx-bcm2711" >> $GITHUB_ENV
-              echo "ARCH_1=arm64" >> $GITHUB_ENV
-              echo "ARCH_2=aarch64" >> $GITHUB_ENV
-              echo "ARCH_3=aarch64_cortex-a72" >> $GITHUB_ENV
+              configure_target "rpi-4" "bcm27xx/bcm2711" "bcm27xx-bcm2711" "arm64" "aarch64" "aarch64_cortex-a72" "NON-REPACK"
               ;;
             "x86-64")
-              echo "PROFILE=generic" >> $GITHUB_ENV
-              echo "TARGET_SYSTEM=x86/64" >> $GITHUB_ENV
-              echo "TARGET_NAME=x86-64" >> $GITHUB_ENV
-              echo "ARCH_1=amd64" >> $GITHUB_ENV
-              echo "ARCH_2=x86_64" >> $GITHUB_ENV
-              echo "ARCH_3=x86_64" >> $GITHUB_ENV
+              configure_target "generic" "x86/64" "x86-64" "amd64" "x86_64" "x86_64" "NON-REPACK"
+              ;;
+              
+            # OPHUB Amlogic devices
+            "OPHUB Amlogic s905")
+              configure_arm_device "s905" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s905 Beelink Mini")
+              configure_arm_device "s905-beelink-mini" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s905 MXQ Pro Plus")
+              configure_arm_device "s905-mxqpro-plus" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s905W")
+              configure_arm_device "s905w" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s905W W95")
+              configure_arm_device "s905w-w95" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s905W X96 Mini")
+              configure_arm_device "s905w-x96-mini" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s905W X96W")
+              configure_arm_device "s905w-x96w" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s905X HG680P")
+              configure_arm_device "s905x" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s905X B860H")
+              configure_arm_device "s905x-b860h" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s905X Nexbox A95X")
+              configure_arm_device "s905x-nexbox-a95x" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s905X2")
+              configure_arm_device "s905x2" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s905X2 KM3")
+              configure_arm_device "s905x2-km3" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s905X2 X96 Max 2G")
+              configure_arm_device "s905x2-x96max-2g" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s905X3")
+              configure_arm_device "s905x3" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s905X3 H96 Max")
+              configure_arm_device "s905x3-h96max" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s905X3 HK1")
+              configure_arm_device "s905x3-hk1" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s905X3 X96 Max")
+              configure_arm_device "s905x3-x96max" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s912")
+              configure_arm_device "s912" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s912 H96 Pro Plus")
+              configure_arm_device "s912-h96pro-plus" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Amlogic s912 X92")
+              configure_arm_device "s912-x92" "5.15.y_6.1.y" "OPHUB"
+              ;;
+            "OPHUB Rockchip rk3318 H96-MAX")
+              configure_arm_device "rk3318-box" "6.1.y" "OPHUB"
+              ;;
+              
+            # ULO Amlogic devices
+            "ULO Amlogic s905X HG680P")
+              configure_arm_device "s905x" "6.1.66-DBAI" "ULO"
+              ;;
+            "ULO Amlogic s905X B860H")
+              configure_arm_device "s905x" "6.1.66-DBAI" "ULO"
+              ;;
+            "ULO Amlogic s905X2")
+              configure_arm_device "s905x2" "6.1.66-DBAI" "ULO"
+              ;;
+            "ULO Amlogic s905X3")
+              configure_arm_device "s905x3" "6.1.66-DBAI" "ULO"
+              ;;
+            "ULO Amlogic s905X4")
+              configure_arm_device "s905x4" "6.1.66-DBAI" "ULO"
+              ;;
+              
+            # ULO Allwinner devices
+            "ULO Allwinner H5 Orange Pi Zero Plus2")
+              configure_arm_device "h5-orangepi-zeroplus2" "6.1.31-AW64-DBAI" "ULO"
+              ;;
+            "ULO Allwinner H5 Orange Pi Zero Plus")
+              configure_arm_device "h5-orangepi-zeroplus" "6.1.31-AW64-DBAI" "ULO"
+              ;;
+            "ULO Allwinner H5 Orange Pi Prime")
+              configure_arm_device "h5-orangepi-prime" "6.1.31-AW64-DBAI" "ULO"
+              ;;
+            "ULO Allwinner H5 Orange Pi PC2")
+              configure_arm_device "h5-orangepi-pc2" "6.1.31-AW64-DBAI" "ULO"
+              ;;
+            "ULO Allwinner H6 Orange Pi Lite2")
+              configure_arm_device "h6-orangepi-lite2" "6.1.31-AW64-DBAI" "ULO"
+              ;;
+            "ULO Allwinner H6 Orange Pi 1 Plus")
+              configure_arm_device "h6-orangepi-1plus" "6.1.31-AW64-DBAI" "ULO"
+              ;;
+            "ULO Allwinner H6 Orange Pi 3")
+              configure_arm_device "h6-orangepi-3" "6.1.31-AW64-DBAI" "ULO"
+              ;;
+            "ULO Allwinner H6 Orange Pi 3 LTS")
+              configure_arm_device "h6-orangepi-3lts" "6.1.31-AW64-DBAI" "ULO"
+              ;;
+            "ULO Allwinner H616 Orange Pi Zero2")
+              configure_arm_device "h616-orangepi-zero2" "6.1.31-AW64-DBAI" "ULO"
+              ;;
+            "ULO Allwinner H618 Orange Pi Zero2W")
+              configure_arm_device "h618-orangepi-zero2w" "6.1.31-AW64-DBAI" "ULO"
+              ;;
+            "ULO Allwinner H618 Orange Pi Zero3")
+              configure_arm_device "h618-orangepi-zero3" "6.1.31-AW64-DBAI" "ULO"
+              ;;
+              
+            # ULO Rockchip devices
+            "ULO Rockchip rk3566 Orange Pi 3B")
+              configure_arm_device "rk3566-orangepi-3b" "5.10.160-rk35v-dbai" "ULO"
+              ;;
+            "ULO Rockchip rk3588s Orange Pi 5")
+              configure_arm_device "rk3588s-orangepi-5" "5.10.160-rk35v-dbai" "ULO"
               ;;
           esac
 
@@ -260,11 +463,11 @@ jobs:
         if: steps.variables.outputs.status == 'success'
         run: |
           # Determine archive extension based on version
-          CURVER=$(echo "${{ env.BRANCH }}" | cut -d'.' -f1)
+          CURVER=$(echo "${BRANCH}" | cut -d'.' -f1)
           archive_ext=$([ "${CURVER}" == "24" ] && echo "tar.zst" || echo "tar.xz")
 
           # Download image builder
-          RELEASE="${{ env.DOWNLOAD_BASE }}/releases/${{ env.BRANCH }}/targets/${{ env.TARGET_SYSTEM }}/${{ env.BASE }}-imagebuilder-${{ env.BRANCH }}-${{ env.TARGET_NAME }}.Linux-x86_64.${archive_ext}"
+          RELEASE="${DOWNLOAD_BASE}/releases/${BRANCH}/targets/${TARGET_SYSTEM}/${BASE}-imagebuilder-${BRANCH}-${TARGET_NAME}.Linux-x86_64.${archive_ext}"
           echo "Downloading from: $RELEASE"
           wget --progress=dot:giga "$RELEASE"
 
@@ -279,8 +482,8 @@ jobs:
           esac
 
           # Setup working directory
-          mv *-imagebuilder-* ${{ env.WORKING_DIR }}
-          cp -r $GITHUB_WORKSPACE/origin/* $GITHUB_WORKSPACE/${{ env.WORKING_DIR }}
+          mv *-imagebuilder-* ${WORKING_DIR}
+          cp -r $GITHUB_WORKSPACE/origin/* $GITHUB_WORKSPACE/${WORKING_DIR}
 
           echo "status=success" >> $GITHUB_OUTPUT
 
@@ -288,7 +491,7 @@ jobs:
         id: packages
         if: steps.download.outputs.status == 'success'
         run: |
-          cd ${{ env.WORKING_DIR }}
+          cd ${WORKING_DIR}
           chmod +x scripts/PACKAGES.sh
           ./scripts/PACKAGES.sh
 
@@ -298,7 +501,7 @@ jobs:
         id: customize
         if: steps.packages.outputs.status == 'success'
         run: |
-          cd ${{ env.WORKING_DIR }}
+          cd ${WORKING_DIR}
 
           # Apply patches
           chmod +x scripts/PATCH.sh
@@ -319,33 +522,66 @@ jobs:
         id: build
         if: steps.customize.outputs.status == 'success'
         run: |
-          cd ${{ env.WORKING_DIR }}
+          cd ${WORKING_DIR}
           mkdir -p compiled_images
           chmod +x make-image.sh
 
           # Clean if requested
-          if [ "${{ env.CLEAN }}" == "true" ]; then
+          if [ "${CLEAN}" == "true" ]; then
             make clean
           fi
             
           # Build image
-          time ./make-image.sh ${{ env.PROFILE }} ${{ env.TUNNEL }}
+          time ./make-image.sh ${PROFILE} ${{ env.TUNNEL }}
             
           # Move and rename output files
-          for file in bin/targets/"${{ env.TARGET_SYSTEM }}"/*.img.gz; do
-            if [ -f "$file" ]; then
-              new_name="RTA-WRT_$(basename "$file" .img.gz)_${{ env.TUNNEL }}.img.gz"
-              mv "$file" compiled_images/$new_name
-            fi
-          done
+          if [[ "$TYPE" =~ ^(OPHUB|ULO)$ ]]; then
+              for file in bin/targets/"${TARGET_SYSTEM}"/*-rootfs.tar.gz; do
+                if [ -f "$file" ]; then
+                  new_name="RTA-WRT_$(basename "$file" -rootfs.tar.gz)_${{ env.TUNNEL }}-rootfs.tar.gz"
+                  mv "$file" compiled_images/$new_name
+                fi
+              done
+          else
+              for file in bin/targets/"${{ env.TARGET_SYSTEM }}"/*.img.gz; do
+                if [ -f "$file" ]; then
+                  new_name="RTA-WRT_$(basename "$file" .img.gz)_${{ env.TUNNEL }}.img.gz"
+                  mv "$file" compiled_images/$new_name
+                fi
+              done
+          fi
+
 
           echo "Images built successfully:"
           ls -la compiled_images/
           echo "status=success" >> $GITHUB_OUTPUT
 
+      - name: Repack OpenWrt
+        id: repack
+        if: steps.build.outputs.status == 'success'
+        run: |
+          cd ${WORKING_DIR}
+          chmod +x scripts/REPACKWRT.sh
+          echo "Repacking OpenWrt images ${TYPE}..."
+          if [[ "$TYPE" =~ ^(OPHUB|ULO)$ ]]; then
+            ./scripts/REPACKWRT.sh "$TYPE" "$TARGET_BUILD" "$KERNEL" "${{ env.TUNNEL }}"
+          fi
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Mod SDCard
+        id: modsdcard
+        if: steps.repack.outputs.status == 'success'
+        run: |
+          cd ${WORKING_DIR}
+          chmod +x scripts/MODSDCARD.sh
+          if [[ "$TYPE" =~ ^(OPHUB|ULO)$ ]]; then
+            ./scripts/MODSDCARD.sh
+          fi
+          echo "status=success" >> $GITHUB_OUTPUT
+
       - name: Before Upload
         id: beforeupload
-        if: steps.build.outputs.status == 'success'
+        if: steps.modsdcard.outputs.status == 'success'
         run: |
           cd ${{ env.WORKING_DIR }}
           chmod +x scripts/RENAMEFW.sh
@@ -363,19 +599,15 @@ jobs:
           files: ${{ env.WORKING_DIR }}/compiled_images/*.img.gz
           prerelease: ${{ github.ref_name == 'dev' }}
 
-      # - name: Generate file download links
-      #   run: |
-      #     RELEASE_URL="https://github.com/rizkikotet-dev/RTA-WRT/releases/download/${{ env.RELEASE_TAG }}"
-      #     ls ${{ env.WORKING_DIR }}/compiled_images/*.img.gz | while read -r file; do
-      #       filename=$(basename "$file")
-      #       echo "$MATRIXTARGET|$RELEASE_URL/$filename" >> artifacts.txt
-      #     done
-
       - name: Upload file links as artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-links-${{ matrix.target }}
-          path: artifacts.txt
+          path: /home/runner/work/RTA-WRT/RTA-WRT/imagebuilder/compiled_images//artifacts.txt
+
+      - name: Clean Storage
+        run: |
+          sudo rm -rf ${{ env.WORKING_DIR }}
 
   notify:
     name: Notify Release
@@ -389,7 +621,9 @@ jobs:
 
       - name: Combine artifacts
         run: |
-          cat artifacts/*/artifacts.txt > combined_artifacts.txt
+          mkdir -p artifacts
+          find artifacts -name "artifacts.txt" -exec cat {} \; > combined_artifacts.txt
+          cat combined_artifacts.txt || echo "No artifacts found"
 
       - name: Telegram Notification
         run: |
@@ -403,6 +637,7 @@ jobs:
           VERSION="${{ needs.prebuild.outputs.branch }}"
           BUILD_TYPE="${{ env.TUNNEL }}"
           FOR="${{ github.ref_name }}"
+          RELEASE_TAG="${{ needs.prebuild.outputs.release_tag }}"
 
           # Set image URL based on source
           if [ "$SOURCE" = "immortalwrt" ]; then
@@ -415,13 +650,11 @@ jobs:
           if [ "$FOR" = "main" ]; then
               message="━━━━━━━━━━━━━━━━━━━━━━
           🎯 *RTA-WRT Firmware Update*
-          ✅ _Stable Release_
-
+          ✅ *Stable Release*
           🔹 *Build:* ${BUILD}
           🔹 *Version:* ${SOURCE}:${VERSION}
           🔹 *Date:* $(date '+%d-%m-%Y %H:%M:%S')
           🔹 *Build Type:* ${BUILD_TYPE}
-
           📌 *Release Notes:*
           • Stable version release
           • Recommended for all users
@@ -430,13 +663,11 @@ jobs:
           else
               message="━━━━━━━━━━━━━━━━━━━━━━
           🚀 *RTA-WRT Firmware Update*
-          🌟 _Development Release_
-
+          🌟 *Development Release*
           🔹 *Build:* ${BUILD}
           🔹 *Version:* ${SOURCE}:${VERSION}
           🔹 *Date:* $(date '+%d-%m-%Y %H:%M:%S')
           🔹 *Build Type:* ${BUILD_TYPE}
-
           📌 *Development Notes:*
           • Suitable for testing
           • Please provide feedback
@@ -445,30 +676,45 @@ jobs:
           ━━━━━━━━━━━━━━━━━━━━━━"
           fi
 
+          # Initialize buttons as empty array
           BUTTONS='[]'
 
-          while IFS='|' read -r target_name file_url || [[ -n "$target_name" ]]; do
-              target_name=$(echo "$target_name" | xargs)
-              file_url=$(echo "$file_url" | xargs)
-
-              if [[ -n "$target_name" && -n "$file_url" ]]; then
-                  echo "Menambahkan tombol: $target_name -> $file_url"
-                  BUTTONS=$(echo "$BUTTONS" | jq --arg name "$target_name" --arg url "$file_url" \
-                      '. += [[{"text": "📥 \($name)", "url": $url}]]')
-              fi
-          done < combined_artifacts.txt
+          # Check if combined_artifacts.txt exists and is not empty
+          # if [ -s combined_artifacts.txt ]; then
+          #     while IFS='|' read -r target_name file_url || [[ -n "$target_name" ]]; do
+          #         target_name=$(echo "$target_name" | xargs)
+          #         file_url=$(echo "$file_url" | xargs)
+          #         if [[ -n "$target_name" && -n "$file_url" ]]; then
+          #             echo "Adding button: $target_name -> $file_url"
+          #             BUTTONS=$(echo "$BUTTONS" | jq --arg name "$target_name" --arg url "$file_url" \
+          #                 '. += [[{"text": "📥 \($name)", "url": $url}]]')
+          #         fi
+          #     done < combined_artifacts.txt
+          # else
+          #     echo "No artifacts found or file is empty"
+          # fi
 
           # Add a button to view the release
-          BUTTONS=$(echo "$BUTTONS" | jq '. += [[{"text": "🔗 View Release", "url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/tag/${{ needs.prebuild.outputs.release_tag }}"}]]')
+          if [ -n "$RELEASE_TAG" ]; then
+              VIEW_URL="https://github.com/rizkikotet-dev/RTA-WRT/releases/tag/${RELEASE_TAG}"
+              BUTTONS=$(echo "$BUTTONS" | jq --arg url "$VIEW_URL" \
+                  '. += [[{"text": "🔗 View Release", "url": $url}]]')
+          fi
 
           # Send message with photo
-          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto" \
+          RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto" \
               -d "chat_id=${CHAT_ID}" \
               -d "photo=${image_url}" \
               -d "caption=${message}" \
               -d "parse_mode=Markdown" \
               -d "message_thread_id=${THREAD_ID}" \
-              -d "reply_markup={\"inline_keyboard\":$BUTTONS}"
+              -d "reply_markup={\"inline_keyboard\":$BUTTONS}")
 
-          # Clean up
-          rm -f combined_artifacts.txt
+          # Check if the message was sent successfully
+          if echo "$RESPONSE" | jq -e '.ok == true' > /dev/null; then
+              echo "Telegram notification sent successfully!"
+          else
+              echo "Failed to send Telegram notification:"
+              echo "$RESPONSE" | jq '.'
+              exit 1
+          fi
