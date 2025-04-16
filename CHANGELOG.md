@@ -1,11 +1,19 @@
 # What's New!
 
-**Changelog Firmware** (08-03-2025)
+**Changelog Firmware** (16-04-2025)
+
+- New OpenWrt Update To 24.10.1
+- Fix Navbar
+- Improve Script Startup
+- etc
+
+**Changelog Firmware** (10-03-2025)
 
 - Add support for new hardware components
 - Add luci-app-droidmodem
 - Update default theme to RTAWRT and add related package references
 - Add Net Monitor
+- Add New Firmware OPHUB Rockchip rk3318 H96-MAX
 
 **Changelog Firmware** (02-03-2025)
 

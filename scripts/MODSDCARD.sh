@@ -193,14 +193,14 @@ main() {
     # Configuration array with format device:dtb:model
     local builds=()
     case $MATRIXTARGET in
-        "Amlogic s905X HG680P")
+        "OPHUB Amlogic s905X HG680P"|"ULO Amlogic s905X HG680P")
             builds=(
                 "_s905x_k5:meson-gxl-s905x-p212.dtb:HG680P"
                 "_s905x_k6:meson-gxl-s905x-p212.dtb:HG680P"
                 "-s905x-:meson-gxl-s905x-p212.dtb:HG680P"
             )
             ;;
-        "Amlogic s905X B860H")
+        "OPHUB Amlogic s905X B860H"|"ULO Amlogic s905X B860H")
             builds=(
                 "_s905x-b860h_k5:meson-gxl-s905x-b860h.dtb:B860H_v1-v2"
                 "_s905x-b860h_k6:meson-gxl-s905x-b860h.dtb:B860H_v1-v2"

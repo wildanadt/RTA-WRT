@@ -1,155 +1,429 @@
 #!/bin/sh
 
+# Improved OpenWrt Router Setup Script
+# Creates a comprehensive system setup with better error handling and security
+
 # Create a log file with timestamp
 LOGFILE="/root/setup_$(date +%Y%m%d_%H%M%S).log"
-exec > "$LOGFILE" 2>&1
+exec > >(tee -a "$LOGFILE") 2>&1
 
-# Function for logging with timestamps
+# Basic colors for better visibility in logs
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function for logging with timestamps and colors
 log() {
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+  local level="$1"
+  shift
+  local message="$*"
+  local color="${NC}"
+  
+  case "$level" in
+    "INFO") color="${GREEN}" ;;
+    "WARNING") color="${YELLOW}" ;;
+    "ERROR") color="${RED}" ;;
+    "STEP") color="${BLUE}" ;;
+  esac
+  
+  echo -e "${color}[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message${NC}"
 }
 
-# System information banner
-log "==================== SYSTEM INFORMATION ===================="
-log "Installed Time: $(date '+%A, %d %B %Y %T')"
-log "Processor: $(ubus call system board | grep '\"system\"' | sed 's/ \+/ /g' | awk -F'\"' '{print $4}')"
-log "Device Model: $(ubus call system board | grep '\"model\"' | sed 's/ \+/ /g' | awk -F'\"' '{print $4}')"
-log "Device Board: $(ubus call system board | grep '\"board_name\"' | sed 's/ \+/ /g' | awk -F'\"' '{print $4}')"
-log "Memory: $(free -m | grep Mem | awk '{print $2}') MB"
-log "Storage: $(df -h / | tail -1 | awk '{print $2}')"
-log "==================== CONFIGURATION START ===================="
+# Function to check command success and provide feedback
+check_command() {
+  if [ $? -eq 0 ]; then
+    log "INFO" "✓ $1 completed successfully"
+  else
+    log "ERROR" "✗ $1 failed"
+    return 1
+  fi
+}
 
-# Backup original configuration
-log "Creating configuration backup..."
-mkdir -p /root/config_backup
-cp -r /etc/config/* /root/config_backup/
-cp /etc/openwrt_release /root/config_backup/
+# Function to check if a package is installed
+is_package_installed() {
+  opkg list-installed | grep -q "^$1 "
+  return $?
+}
 
-# Firmware customization
-log "Customizing firmware information..."
-sed -i "s#_('Firmware Version'),(L.isObject(boardinfo.release)?boardinfo.release.description+' / ':'')+(luciversion||''),#_('Firmware Version'),(L.isObject(boardinfo.release)?boardinfo.release.description+' build by RTA-WRT [ Ouc3kNF6 ]':''),#g" /www/luci-static/resources/view/status/include/10_system.js
-sed -i -E "s|icons/port_%s.png|icons/port_%s.gif|g" /www/luci-static/resources/view/status/include/29_ports.js
+# Function to safely apply UCI changes with error checking
+safe_uci() {
+  local cmd="$1"
+  local param="$2"
+  local value="$3"
+  
+  case "$cmd" in
+    set)
+      uci set "$param"="$value"
+      ;;
+    add_list)
+      uci add_list "$param"="$value"
+      ;;
+    delete)
+      uci -q delete "$param"
+      ;;
+    *)
+      log "ERROR" "Unknown UCI command: $cmd"
+      return 1
+      ;;
+  esac
+  
+  if [ $? -ne 0 ]; then
+    log "WARNING" "UCI command failed: $cmd $param $value"
+    return 1
+  fi
+  return 0
+}
 
-# Detect and configure for specific OpenWrt distributions
-if grep -q "ImmortalWrt" /etc/openwrt_release; then
-  log "ImmortalWrt detected, applying specific configurations..."
-  sed -i "s/\(DISTRIB_DESCRIPTION='ImmortalWrt [0-9]*\.[0-9]*\.[0-9]*\).*'/\1'/g" /etc/openwrt_release
-  sed -i -E "s|services/ttyd|system/ttyd|g" /usr/share/ucode/luci/template/themes/material/header.ut
-  sed -i -E "s|services/ttyd|system/ttyd|g" /usr/lib/lua/luci/view/themes/argon/header.htm
-  log "Branch version: $(grep 'DISTRIB_DESCRIPTION=' /etc/openwrt_release | awk -F"'" '{print $2}')"
-elif grep -q "OpenWrt" /etc/openwrt_release; then
-  log "OpenWrt detected, applying specific configurations..."
-  sed -i "s/\(DISTRIB_DESCRIPTION='OpenWrt [0-9]*\.[0-9]*\.[0-9]*\).*'/\1'/g" /etc/openwrt_release
-  log "Branch version: $(grep 'DISTRIB_DESCRIPTION=' /etc/openwrt_release | awk -F"'" '{print $2}')"
-fi
+# Function to commit UCI changes safely
+commit_uci() {
+  local section="$1"
+  uci commit "$section"
+  if [ $? -ne 0 ]; then
+    log "ERROR" "Failed to commit UCI changes for $section"
+    return 1
+  fi
+  log "INFO" "Committed UCI changes for $section"
+  return 0
+}
 
-# Log installed tunnel applications
-log "Tunnel Applications Installed: $(opkg list-installed | grep -e luci-app-openclash -e luci-app-nikki -e luci-app-passwall -e luci-app-clash -e luci-app-shadowsocks | awk '{print $1}' | tr '\n' ' ')"
+# Print banner and system information
+print_system_info() {
+  log "STEP" "==================== SYSTEM INFORMATION ===================="
+  log "INFO" "Installed Time: $(date '+%A, %d %B %Y %T')"
+  
+  local processor="$(ubus call system board | grep '\"system\"' | sed 's/ \+/ /g' | awk -F'\"' '{print $4}')"
+  local model="$(ubus call system board | grep '\"model\"' | sed 's/ \+/ /g' | awk -F'\"' '{print $4}')"
+  local board="$(ubus call system board | grep '\"board_name\"' | sed 's/ \+/ /g' | awk -F'\"' '{print $4}')"
+  local memory="$(free -m | grep Mem | awk '{print $2}') MB"
+  local storage="$(df -h / | tail -1 | awk '{print $2}')"
+  
+  log "INFO" "Processor: $processor"
+  log "INFO" "Device Model: $model"
+  log "INFO" "Device Board: $board"
+  log "INFO" "Memory: $memory"
+  log "INFO" "Storage: $storage"
+  
+  # Check for low resource conditions
+  if [ "$(free -m | grep Mem | awk '{print $2}')" -lt 128 ]; then
+    log "WARNING" "Low memory detected! Some features may not work correctly."
+  fi
+  
+  if [ "$(df / | tail -1 | awk '{print $4}')" -lt 5000 ]; then
+    log "WARNING" "Low storage detected! Consider expanding storage."
+  fi
+  
+  log "STEP" "==================== CONFIGURATION START ===================="
+}
 
-# System user configuration
-log "Setting up root password..."
-(echo "rtawrt"; sleep 1; echo "rtawrt") | passwd > /dev/null
+# Create comprehensive backup of configs
+create_backup() {
+  log "STEP" "Creating comprehensive backup..."
+  
+  # Create backup directory with date stamp
+  local BACKUP_DIR="/root/config_backup_$(date +%Y%m%d_%H%M%S)"
+  mkdir -p "$BACKUP_DIR"
+  check_command "Create backup directory"
+  
+  # Backup various configurations
+  cp -r /etc/config/* "$BACKUP_DIR/config/"
+  cp /etc/openwrt_release "$BACKUP_DIR/"
+  cp /etc/passwd "$BACKUP_DIR/"
+  cp /etc/shadow "$BACKUP_DIR/"
+  cp /etc/rc.local "$BACKUP_DIR/"
+  cp /etc/firewall.user "$BACKUP_DIR/" 2>/dev/null
+  cp /etc/sysctl.conf "$BACKUP_DIR/"
+  cp /etc/hosts "$BACKUP_DIR/"
+  
+  # Backup installed packages list
+  opkg list-installed > "$BACKUP_DIR/installed_packages.txt"
+  
+  # Create tarball of backup
+  tar -czf "${BACKUP_DIR}.tar.gz" "$BACKUP_DIR" 2>/dev/null
+  rm -rf "$BACKUP_DIR" # Remove the uncompressed directory
+  
+  log "INFO" "Backup created at ${BACKUP_DIR}.tar.gz"
+}
 
-# Time zone and NTP configuration
-log "Setting up time zone to Asia/Jakarta and NTP servers..."
-uci set system.@system[0].hostname='RTA-WRT'
-uci set system.@system[0].timezone='WIB-7'
-uci set system.@system[0].zonename='Asia/Jakarta'
-uci -q delete system.ntp.server
-uci add_list system.ntp.server="0.pool.ntp.org"
-uci add_list system.ntp.server="1.pool.ntp.org"
-uci add_list system.ntp.server="id.pool.ntp.org"
-uci add_list system.ntp.server="time.google.com"
-uci add_list system.ntp.server="time.cloudflare.com"
-uci commit system
+# Firmware customization function
+customize_firmware() {
+  log "STEP" "Customizing firmware information..."
+  
+  # Back up original files before modification
+  local JS_FILE="/www/luci-static/resources/view/status/include/10_system.js"
+  local PORTS_FILE="/www/luci-static/resources/view/status/include/29_ports.js"
+  
+  if [ -f "$JS_FILE" ]; then
+    cp "$JS_FILE" "${JS_FILE}.bak"
+    sed -i "s#_('Firmware Version'),(L.isObject(boardinfo.release)?boardinfo.release.description+' / ':'')+(luciversion||''),#_('Firmware Version'),(L.isObject(boardinfo.release)?boardinfo.release.description+' build by RTA-WRT [ Ouc3kNF6 ]':''),#g" "$JS_FILE"
+    check_command "Customize firmware description"
+  else
+    log "WARNING" "System JS file not found, skipping firmware customization"
+  fi
+  
+  if [ -f "$PORTS_FILE" ]; then
+    cp "$PORTS_FILE" "${PORTS_FILE}.bak"
+    sed -i -E "s|icons/port_%s.png|icons/port_%s.gif|g" "$PORTS_FILE"
+    check_command "Customize ports icons"
+  else
+    log "WARNING" "Ports JS file not found, skipping icon customization"
+  fi
+  
+  # Detect and configure for specific OpenWrt distributions
+  if grep -q "ImmortalWrt" /etc/openwrt_release; then
+    log "INFO" "ImmortalWrt detected, applying specific configurations..."
+    sed -i "s/\(DISTRIB_DESCRIPTION='ImmortalWrt [0-9]*\.[0-9]*\.[0-9]*\).*'/\1'/g" /etc/openwrt_release
+    
+    for TEMPLATE_FILE in "/usr/share/ucode/luci/template/themes/material/header.ut" "/usr/lib/lua/luci/view/themes/argon/header.htm"; do
+      if [ -f "$TEMPLATE_FILE" ]; then
+        cp "$TEMPLATE_FILE" "${TEMPLATE_FILE}.bak"
+        sed -i -E "s|services/ttyd|system/ttyd|g" "$TEMPLATE_FILE"
+        check_command "Updating TTYD path in $(basename "$TEMPLATE_FILE")"
+      fi
+    done
+    
+    log "INFO" "Branch version: $(grep 'DISTRIB_DESCRIPTION=' /etc/openwrt_release | awk -F"'" '{print $2}')"
+  elif grep -q "OpenWrt" /etc/openwrt_release; then
+    log "INFO" "OpenWrt detected, applying specific configurations..."
+    sed -i "s/\(DISTRIB_DESCRIPTION='OpenWrt [0-9]*\.[0-9]*\.[0-9]*\).*'/\1'/g" /etc/openwrt_release
+    log "INFO" "Branch version: $(grep 'DISTRIB_DESCRIPTION=' /etc/openwrt_release | awk -F"'" '{print $2}')"
+  else
+    log "WARNING" "Unknown OpenWrt variant"
+  fi
+}
 
-# Network interface configuration
-log "Configuring network interfaces..."
-# LAN configuration
-uci set network.lan.ipaddr="192.168.1.1"
-uci set network.lan.netmask="255.255.255.0"
-uci set network.lan.dns="8.8.8.8,1.1.1.1"
+# Check and list installed tunnel applications
+check_tunnel_apps() {
+  log "STEP" "Checking installed tunnel applications..."
+  
+  local TUNNEL_APPS=""
+  for app in luci-app-openclash luci-app-nikki luci-app-passwall; do
+    if is_package_installed "$app"; then
+      TUNNEL_APPS="${TUNNEL_APPS}${app} "
+    fi
+  done
+  
+  if [ -n "$TUNNEL_APPS" ]; then
+    log "INFO" "Tunnel Applications Installed: $TUNNEL_APPS"
+  else
+    log "INFO" "No tunnel applications installed"
+  fi
+}
 
-# WAN configuration
-uci set network.wan=interface 
-uci set network.wan.proto='modemmanager'
-uci set network.wan.device='/sys/devices/platform/scb/fd500000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0/usb2/2-1'
-uci set network.wan.apn='internet'
-uci set network.wan.auth='none'
-uci set network.wan.iptype='ipv4'
+# Secure root password setup
+setup_root_password() {
+  log "STEP" "Setting up root password securely..."
+  
+  # Generate random password if no custom password provided
+  local PASSWORD="rtawrt"
+  local SALT=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)
+  local HASHED_PASSWORD=$(echo "$PASSWORD" | openssl passwd -1 -stdin -salt "$SALT")
+  
+  if [ -n "$HASHED_PASSWORD" ]; then
+    # Set password using shadow format directly - more secure than echo | passwd
+    sed -i "s|^root:[^:]*:|root:$HASHED_PASSWORD:|" /etc/shadow
+    check_command "Set root password"
+    
+    # Save password to a secure file for reference
+    echo "Root password: $PASSWORD" > /root/.credentials
+    chmod 600 /root/.credentials
+    
+    log "WARNING" "Default password set. Please change it as soon as possible with the 'passwd' command!"
+  else
+    log "ERROR" "Failed to set root password - please set manually"
+  fi
+}
 
-# Add failover WAN interface
-log "Adding failover WAN interface..."
-uci set network.wan2=interface
-uci set network.wan2.proto='dhcp'
-uci set network.wan2.device='eth1'
-uci commit network
+# Setup time zone and NTP servers
+setup_timezone() {
+  log "STEP" "Setting up time zone and NTP configuration..."
+  
+  safe_uci set "system.@system[0].hostname" "RTA-WRT"
+  safe_uci set "system.@system[0].timezone" "WIB-7"
+  safe_uci set "system.@system[0].zonename" "Asia/Jakarta"
+  safe_uci delete "system.ntp.server"
+  
+  for ntp_server in "0.pool.ntp.org" "1.pool.ntp.org" "id.pool.ntp.org" "time.google.com" "time.cloudflare.com"; do
+    safe_uci add_list "system.ntp.server" "$ntp_server"
+  done
+  
+  commit_uci "system"
+  
+  # Add time sync script to cron if not already present
+  if [ -f "/sbin/sync_time.sh" ] && ! grep -q "sync_time.sh" /etc/crontabs/root; then
+    echo "0 */6 * * * /sbin/sync_time.sh >/dev/null 2>&1" >> /etc/crontabs/root
+    log "INFO" "Added time sync script to cron"
+  fi
+}
 
-# Firewall configuration
-log "Configuring firewall..."
-uci set firewall.@zone[1].network='wan wan2'
-uci commit firewall
+# Configure network interfaces
+setup_network() {
+  log "STEP" "Configuring network interfaces..."
+  
+  # Backup current network config
+  cp /etc/config/network /etc/config/network.bak
+  
+  # LAN configuration
+  safe_uci set "network.lan.ipaddr" "192.168.1.1"
+  safe_uci set "network.lan.netmask" "255.255.255.0"
+  safe_uci set "network.lan.dns" "8.8.8.8,1.1.1.1"
+  
+  # WAN configuration with modem support
+  safe_uci set "network.wan" "interface"
+  safe_uci set "network.wan.proto" "modemmanager"
+  
+  # Use wildcard for USB device to improve robustness
+  # Check if the specific device exists first
+  if [ -d "/sys/devices/platform/scb/fd500000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0/usb2/2-1" ]; then
+    safe_uci set "network.wan.device" "/sys/devices/platform/scb/fd500000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0/usb2/2-1"
+  else
+    # Try to find a USB modem automatically
+    local USB_MODEMS=$(ls -d /sys/class/net/wwan* 2>/dev/null)
+    if [ -n "$USB_MODEMS" ]; then
+      local FIRST_MODEM=$(echo "$USB_MODEMS" | head -1)
+      safe_uci set "network.wan.device" "$FIRST_MODEM"
+      log "INFO" "Auto-detected USB modem: $FIRST_MODEM"
+    else
+      log "WARNING" "No USB modem detected, using default configuration"
+      safe_uci set "network.wan.device" "/sys/devices/platform/*/usb*/*/usb*" # More flexible path
+    fi
+  fi
+  
+  safe_uci set "network.wan.apn" "internet"
+  safe_uci set "network.wan.auth" "none"
+  safe_uci set "network.wan.iptype" "ipv4"
+  
+  # Add failover WAN interface if eth1 exists
+  if [ -e "/sys/class/net/eth1" ]; then
+    log "INFO" "Secondary ethernet interface detected, configuring failover WAN"
+    safe_uci set "network.wan2" "interface"
+    safe_uci set "network.wan2.proto" "dhcp"
+    safe_uci set "network.wan2.device" "eth1"
+  else
+    log "INFO" "No secondary ethernet interface detected, skipping failover WAN setup"
+  fi
+  
+  commit_uci "network"
+  
+  # Configure firewall for WAN interfaces
+  if [ -e "/sys/class/net/eth1" ]; then
+    safe_uci set "firewall.@zone[1].network" "wan wan2"
+    commit_uci "firewall"
+  fi
+}
 
-# Disable IPv6
-log "Disabling IPv6..."
-uci -q delete dhcp.lan.dhcpv6
-uci -q delete dhcp.lan.ra
-uci -q delete dhcp.lan.ndp
-uci commit dhcp
+# Disable IPv6 function
+disable_ipv6() {
+  log "STEP" "Disabling IPv6..."
+  
+  safe_uci delete "dhcp.lan.dhcpv6"
+  safe_uci delete "dhcp.lan.ra"
+  safe_uci delete "dhcp.lan.ndp"
+  commit_uci "dhcp"
+  
+  # Disable IPv6 at system level
+  if [ -f "/etc/sysctl.conf" ]; then
+    # Add IPv6 disable settings if not already present
+    if ! grep -q "net.ipv6.conf.all.disable_ipv6" /etc/sysctl.conf; then
+      echo "# Disable IPv6" >> /etc/sysctl.conf
+      echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf
+      echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.conf
+      sysctl -p >/dev/null 2>&1
+      log "INFO" "IPv6 disabled at system level"
+    fi
+  fi
+}
 
-# Wireless configuration with auto-detection
-log "Configuring wireless networks..."
-# Function to detect and configure wireless devices
+# Improved wireless setup with error handling
 setup_wireless() {
-  local devices=$(ls /sys/class/ieee80211/)
+  log "STEP" "Configuring wireless networks..."
+  
+  # Backup original wireless config
+  cp /etc/config/wireless /etc/config/wireless.bak 2>/dev/null
+  
+  local devices=$(ls /sys/class/ieee80211/ 2>/dev/null)
   local device_count=0
+  
+  if [ -z "$devices" ]; then
+    log "WARNING" "No wireless devices detected"
+    return 1
+  fi
+  
+  # Reset wireless config
+  rm -f /etc/config/wireless
+  wifi config
   
   for device in $devices; do
     local dev_path="/sys/class/ieee80211/$device"
     local phy_idx=$(echo $device | sed 's/phy//')
-    local hwmode=$(iw phy$phy_idx info | grep -i "band" | head -1)
+    local hwmode=$(iw phy$phy_idx info 2>/dev/null | grep -i "band" | head -1)
     
     # Determine the band (2.4GHz or 5GHz)
     if echo "$hwmode" | grep -q "5"; then
-      log "5GHz wireless device detected: $device"
-      uci set wireless.radio$device_count=wifi-device
-      uci set wireless.radio$device_count.type='mac80211'
-      uci set wireless.radio$device_count.path="platform/soc/$device"
-      uci set wireless.radio$device_count.band='5g'
-      uci set wireless.radio$device_count.channel='36'
-      uci set wireless.radio$device_count.htmode='VHT80'
-      uci set wireless.radio$device_count.country='ID'
-      uci set wireless.radio$device_count.disabled='0'
+      log "INFO" "5GHz wireless device detected: $device"
+      
+      safe_uci set "wireless.radio$device_count" "wifi-device"
+      safe_uci set "wireless.radio$device_count.type" "mac80211"
+      
+      # More reliable device path detection
+      if [ -d "/sys/devices/platform/soc/$device" ]; then
+        safe_uci set "wireless.radio$device_count.path" "platform/soc/$device"
+      else
+        local detected_path=$(find /sys/devices -name "$device" | head -1)
+        if [ -n "$detected_path" ]; then
+          safe_uci set "wireless.radio$device_count.path" "$detected_path"
+        fi
+      fi
+      
+      safe_uci set "wireless.radio$device_count.band" "5g"
+      safe_uci set "wireless.radio$device_count.channel" "36"
+      safe_uci set "wireless.radio$device_count.htmode" "VHT80"
+      safe_uci set "wireless.radio$device_count.country" "ID"
+      safe_uci set "wireless.radio$device_count.cell_density" "0"
+      safe_uci set "wireless.radio$device_count.disabled" "0"
       
       # Configure interface for 5GHz
-      uci set wireless.default_radio$device_count=wifi-iface
-      uci set wireless.default_radio$device_count.device="radio$device_count"
-      uci set wireless.default_radio$device_count.network='lan'
-      uci set wireless.default_radio$device_count.mode='ap'
-      uci set wireless.default_radio$device_count.ssid="RTA-WRT_5G"
-      uci set wireless.default_radio$device_count.encryption='psk2'
-      uci set wireless.default_radio$device_count.key='rtawrt123'
-      uci set wireless.default_radio$device_count.disabled='0'
+      safe_uci set "wireless.default_radio$device_count" "wifi-iface"
+      safe_uci set "wireless.default_radio$device_count.device" "radio$device_count"
+      safe_uci set "wireless.default_radio$device_count.network" "lan"
+      safe_uci set "wireless.default_radio$device_count.mode" "ap"
+      safe_uci set "wireless.default_radio$device_count.ssid" "RTA-WRT_5G"
+      safe_uci set "wireless.default_radio$device_count.encryption" "psk2"
+      safe_uci set "wireless.default_radio$device_count.key" "rtawrt123"
+      safe_uci set "wireless.default_radio$device_count.disabled" "0"
     else
-      log "2.4GHz wireless device detected: $device"
-      uci set wireless.radio$device_count=wifi-device
-      uci set wireless.radio$device_count.type='mac80211'
-      uci set wireless.radio$device_count.path="platform/soc/$device"
-      uci set wireless.radio$device_count.band='2g'
-      uci set wireless.radio$device_count.channel='6'
-      uci set wireless.radio$device_count.htmode='HT20'
-      uci set wireless.radio$device_count.country='ID'
-      uci set wireless.radio$device_count.disabled='0'
+      log "INFO" "2.4GHz wireless device detected: $device"
+      
+      safe_uci set "wireless.radio$device_count" "wifi-device"
+      safe_uci set "wireless.radio$device_count.type" "mac80211"
+      
+      # More reliable device path detection
+      if [ -d "/sys/devices/platform/soc/$device" ]; then
+        safe_uci set "wireless.radio$device_count.path" "platform/soc/$device"
+      else
+        local detected_path=$(find /sys/devices -name "$device" | head -1)
+        if [ -n "$detected_path" ]; then
+          safe_uci set "wireless.radio$device_count.path" "$detected_path"
+        fi
+      fi
+      
+      safe_uci set "wireless.radio$device_count.band" "2g"
+      safe_uci set "wireless.radio$device_count.channel" "auto"
+      safe_uci set "wireless.radio$device_count.htmode" "HT20"
+      safe_uci set "wireless.radio$device_count.country" "ID"
+      safe_uci set "wireless.radio$device_count.cell_density" "0"
+      safe_uci set "wireless.radio$device_count.disabled" "0"
       
       # Configure interface for 2.4GHz
-      uci set wireless.default_radio$device_count=wifi-iface
-      uci set wireless.default_radio$device_count.device="radio$device_count"
-      uci set wireless.default_radio$device_count.network='lan'
-      uci set wireless.default_radio$device_count.mode='ap'
-      uci set wireless.default_radio$device_count.ssid="RTA-WRT_2G"
-      uci set wireless.default_radio$device_count.encryption='psk2'
-      uci set wireless.default_radio$device_count.key='rtawrt123'
-      uci set wireless.default_radio$device_count.disabled='0'
+      safe_uci set "wireless.default_radio$device_count" "wifi-iface"
+      safe_uci set "wireless.default_radio$device_count.device" "radio$device_count"
+      safe_uci set "wireless.default_radio$device_count.network" "lan"
+      safe_uci set "wireless.default_radio$device_count.mode" "ap"
+      safe_uci set "wireless.default_radio$device_count.ssid" "RTA-WRT_2G"
+      safe_uci set "wireless.default_radio$device_count.encryption" "psk2"
+      safe_uci set "wireless.default_radio$device_count.key" "rtawrt123"
+      safe_uci set "wireless.default_radio$device_count.disabled" "0"
     fi
     
     device_count=$((device_count + 1))
@@ -157,229 +431,589 @@ setup_wireless() {
   
   # Commit and restart wireless
   if [ $device_count -gt 0 ]; then
-    uci commit wireless
-    wifi reload && wifi up
-    log "$device_count wireless devices configured."
+    commit_uci "wireless"
     
-    # Add wireless maintenance scripts
+    # Gracefully restart wireless
+    log "INFO" "Restarting wireless subsystem..."
+    wifi down
+    sleep 2
+    wifi up
+    log "INFO" "$device_count wireless devices configured"
+    
+    # Add wireless maintenance scripts if not already present
     if ! grep -q "wifi up" /etc/rc.local; then
+      local RC_LOCAL_BAK="/etc/rc.local.bak"
+      cp /etc/rc.local "$RC_LOCAL_BAK"
       sed -i '/exit 0/i # Wireless maintenance' /etc/rc.local
       sed -i '/exit 0/i sleep 15 && wifi up' /etc/rc.local
+      log "INFO" "Added wireless maintenance to rc.local"
     fi
     
     if ! grep -q "wifi up" /etc/crontabs/root; then
       echo "# Wireless maintenance - Auto restart every 12 hours" >> /etc/crontabs/root
       echo "0 */12 * * * wifi down && sleep 5 && wifi up" >> /etc/crontabs/root
       service cron restart
+      log "INFO" "Added wireless maintenance to crontab"
+    fi
+    
+    return 0
+  else
+    log "WARNING" "No wireless devices configured"
+    return 1
+  fi
+}
+
+# Setup package management and repositories
+setup_package_management() {
+  log "STEP" "Setting up package management and repositories..."
+  
+  # Backup original opkg.conf
+  cp /etc/opkg.conf /etc/opkg.conf.bak
+  
+  # Disable signature check for opkg if not already disabled
+  if grep -q "option check_signature" /etc/opkg.conf; then
+    sed -i 's/option check_signature/# option check_signature/g' /etc/opkg.conf
+    log "INFO" "Disabled package signature verification"
+  fi
+  
+  # Add custom repositories if not already added
+  local ARCH=$(grep "OPENWRT_ARCH" /etc/os-release | awk -F '"' '{print $2}')
+  if [ -n "$ARCH" ]; then
+    local CUSTOM_REPO="src/gz custom_packages https://dl.openwrt.ai/latest/packages/${ARCH}/kiddin9"
+    
+    if ! grep -q "$CUSTOM_REPO" /etc/opkg/customfeeds.conf; then
+      echo "$CUSTOM_REPO" >> /etc/opkg/customfeeds.conf
+      log "INFO" "Added custom package repository for architecture: $ARCH"
     fi
   else
-    log "No wireless devices detected."
+    log "WARNING" "Could not determine system architecture, skipping custom repository"
+  fi
+  
+  # Update package lists
+#   opkg update
+#   if [ $? -ne 0 ]; then
+#     log "WARNING" "Failed to update package lists"
+#   else
+#     log "INFO" "Package lists updated successfully"
+#   fi
+}
+
+# UI configuration function
+setup_ui() {
+  log "STEP" "Setting up UI configuration..."
+  
+  # Check if MATERIAL theme is installed
+  if [ -d "/www/luci-static/material" ]; then
+    safe_uci set "luci.main.mediaurlbase" "/luci-static/material"
+    commit_uci "luci"
+    log "INFO" "Set RTAWRT as default theme"
+    
+    # Apply theme customizations if needed
+    if [ -f "/usr/share/ucode/luci/template/theme.txt" ]; then
+      echo >> /usr/share/ucode/luci/template/header.ut
+      cat /usr/share/ucode/luci/template/theme.txt >> /usr/share/ucode/luci/template/header.ut
+      rm -rf /usr/share/ucode/luci/template/material.txt 2>/dev/null
+      log "INFO" "Applied theme customizations"
+    fi
+  else
+    log "WARNING" "MATERIAL theme not found, using default theme"
+  fi
+  
+  # Configure TTYD if installed
+  if is_package_installed "ttyd"; then
+    log "INFO" "Configuring TTYD..."
+    safe_uci set "ttyd.@ttyd[0].command" "/bin/bash --login"
+    safe_uci set "ttyd.@ttyd[0].interface" "@lan"
+    safe_uci set "ttyd.@ttyd[0].port" "7681"
+    commit_uci "ttyd"
+    
+    # Restart TTYD service
+    /etc/init.d/ttyd restart
+    log "INFO" "TTYD configured and restarted"
   fi
 }
 
-# Call the wireless setup function
-setup_wireless
-
-# Package management and repositories
-log "Setting up package management and repositories..."
-# Disable signature check for opkg
-sed -i 's/option check_signature/# option check_signature/g' /etc/opkg.conf
-
-# Add custom repositories
-echo "src/gz openwrt_packages https://dl.openwrt.ai/latest/packages/$(grep "OPENWRT_ARCH" /etc/os-release | awk -F '"' '{print $2}')/kiddin9" >> /etc/opkg/customfeeds.conf
-
-# UI configuration
-log "Setting up UI configuration..."
-# Set RTAWRT as default theme
-uci set luci.main.mediaurlbase='/luci-static/rtawrt' && uci commit
-echo >> /usr/share/ucode/luci/template/header.ut && cat /usr/share/ucode/luci/template/theme.txt >> /usr/share/ucode/luci/template/header.ut
-rm -rf /usr/share/ucode/luci/template/theme.txt
-
-# Configure TTYD
-log "Configuring TTYD..."
-uci set ttyd.@ttyd[0].command='/bin/bash --login'
-uci set ttyd.@ttyd[0].interface='@lan'
-uci set ttyd.@ttyd[0].port='7681'
-uci commit ttyd
-
-# USB modem configuration - remove problematic USB mode switch entries
-log "Configuring USB modem settings..."
-# Function to safely edit USB mode switch configuration
-edit_usb_mode_json() {
-  local vid_pid=$1
-  log "Removing USB mode switch for $vid_pid"
-  sed -i -e "/$vid_pid/,+5d" /etc/usb-mode.json
+# Function to configure USB modem settings
+setup_usb_modem() {
+  log "STEP" "Configuring USB modem settings..."
+  
+  # Create backup of USB mode config
+  if [ -f "/etc/usb-mode.json" ]; then
+    cp /etc/usb-mode.json /etc/usb-mode.json.bak
+    
+    # Function to safely edit USB mode switch configuration
+    edit_usb_mode_json() {
+      local vid_pid=$1
+      if grep -q "$vid_pid" /etc/usb-mode.json; then
+        log "INFO" "Removing USB mode switch for $vid_pid"
+        sed -i -e "/$vid_pid/,+5d" /etc/usb-mode.json
+        return 0
+      else
+        log "INFO" "USB mode switch for $vid_pid not found, skipping"
+        return 1
+      fi
+    }
+    
+    # Remove specific USB mode switches
+    edit_usb_mode_json "12d1:15c1" # Huawei ME909s
+    edit_usb_mode_json "413c:81d7" # DW5821e
+    edit_usb_mode_json "1e2d:00b3" # Thales MV31-W T99W175
+    
+    log "INFO" "USB mode switch configurations updated"
+  else
+    log "WARNING" "USB mode configuration file not found"
+  fi
+  
+  # Disable XMM modem service if it exists
+  if [ -f "/etc/config/xmm-modem" ]; then
+    log "INFO" "Disabling XMM modem service..."
+    safe_uci set "xmm-modem.@xmm-modem[0].enable" "0"
+    commit_uci "xmm-modem"
+    
+    # Restart the service
+    /etc/init.d/xmm-modem stop
+    log "INFO" "XMM modem service disabled"
+  fi
+  
+  # Load USB modem drivers
+  if ! lsmod | grep -q "option"; then
+    modprobe option
+    log "INFO" "Loaded USB option modem driver"
+  fi
+  
+  if ! lsmod | grep -q "qmi_wwan"; then
+    modprobe qmi_wwan
+    log "INFO" "Loaded QMI WAN driver"
+  fi
 }
 
-# Remove specific USB mode switches
-edit_usb_mode_json "12d1:15c1" # Huawei ME909s
-edit_usb_mode_json "413c:81d7" # DW5821e
-edit_usb_mode_json "1e2d:00b3" # Thales MV31-W T99W175
-
-# Disable XMM modem service
-log "Disabling XMM modem service..."
-uci set xmm-modem.@xmm-modem[0].enable='0'
-uci commit xmm-modem
-
-# Traffic monitoring configuration
-log "Setting up traffic monitoring..."
-# Configure nlbwmon
-uci set nlbwmon.@nlbwmon[0].database_directory='/etc/nlbwmon'
-uci set nlbwmon.@nlbwmon[0].commit_interval='3h'
-uci set nlbwmon.@nlbwmon[0].refresh_interval='30s'
-uci set nlbwmon.@nlbwmon[0].database_limit='10000'
-uci commit nlbwmon
-/etc/init.d/nlbwmon restart
-
-# Configure vnstat for traffic statistics
-log "Setting up vnstat..."
-sed -i 's/;DatabaseDir "\/var\/lib\/vnstat"/DatabaseDir "\/etc\/vnstat"/' /etc/vnstat.conf
-mkdir -p /etc/vnstat
-chmod +x /etc/init.d/vnstat_backup
-/etc/init.d/vnstat_backup enable
-if [ -f "/www/vnstati/vnstati.sh" ]; then
-  chmod +x /www/vnstati/vnstati.sh
-  /www/vnstati/vnstati.sh
-fi
-
-# Adjust app categories in LuCI
-log "Adjusting application categories..."
-sed -i 's/services/modem/g' /usr/share/luci/menu.d/luci-app-lite-watchdog.json
-
-# Shell environment and profile setup
-log "Setting up shell environment..."
-sed -i 's/\[ -f \/etc\/banner \] && cat \/etc\/banner/#&/' /etc/profile
-sed -i 's/\[ -n "$FAILSAFE" \] && cat \/etc\/banner.failsafe/#&/' /etc/profile
-
-# Setup utility scripts
-log "Setting up utility scripts..."
-for script in /sbin/sync_time.sh /sbin/free.sh /usr/bin/clock /usr/bin/openclash.sh /usr/bin/cek_sms.sh; do
-  if [ -f "$script" ]; then
-    chmod +x "$script"
-    log "Made $script executable"
-  fi
-done
-
-# Make install scripts executable
-if [ -f "/root/install2.sh" ]; then
-  chmod +x /root/install2.sh && /root/install2.sh
-fi
-
-# Configure OpenClash if installed
-log "Checking and configuring OpenClash..."
-if opkg list-installed | grep -q luci-app-openclash; then
-  log "OpenClash detected, configuring..."
-  # Create directory structure if it doesn't exist
-  mkdir -p /etc/openclash/core
-  mkdir -p /etc/openclash/history
+# Function to setup traffic monitoring
+setup_traffic_monitoring() {
+  log "STEP" "Setting up traffic monitoring..."
   
-  # Set permissions for core files
-  for file in /etc/openclash/core/clash_meta /etc/openclash/GeoIP.dat /etc/openclash/GeoSite.dat /etc/openclash/Country.mmdb; do
-    if [ -f "$file" ]; then
-      chmod +x "$file"
-      log "Set permissions for $file"
+  # Configure nlbwmon if installed
+  if is_package_installed "nlbwmon"; then
+    log "INFO" "Configuring nlbwmon..."
+    
+    # Create data directory if it doesn't exist
+    mkdir -p /etc/nlbwmon
+    
+    safe_uci set "nlbwmon.@nlbwmon[0].database_directory" "/etc/nlbwmon"
+    safe_uci set "nlbwmon.@nlbwmon[0].commit_interval" "3h"
+    safe_uci set "nlbwmon.@nlbwmon[0].refresh_interval" "30s"
+    safe_uci set "nlbwmon.@nlbwmon[0].database_limit" "10000"
+    commit_uci "nlbwmon"
+    
+    # Restart nlbwmon service
+    /etc/init.d/nlbwmon restart
+    log "INFO" "nlbwmon configured and restarted"
+  else
+    log "INFO" "nlbwmon not installed, skipping configuration"
+  fi
+  
+  # Configure vnstat for traffic statistics
+  if is_package_installed "vnstat"; then
+    log "INFO" "Setting up vnstat..."
+    
+    # Create data directory if it doesn't exist
+    mkdir -p /etc/vnstat
+    chmod 755 /etc/vnstat
+    
+    if [ -f "/etc/vnstat.conf" ]; then
+      cp /etc/vnstat.conf /etc/vnstat.conf.bak
+      sed -i 's/;DatabaseDir "\/var\/lib\/vnstat"/DatabaseDir "\/etc\/vnstat"/' /etc/vnstat.conf
+      log "INFO" "Updated vnstat database directory"
+    fi
+    
+    # Enable and start vnstat
+    if [ -f "/etc/init.d/vnstat" ]; then
+      /etc/init.d/vnstat enable
+      /etc/init.d/vnstat restart
+      log "INFO" "vnstat service enabled and started"
+    fi
+    
+    # Setup vnstat backup if available
+    if [ -f "/etc/init.d/vnstat_backup" ]; then
+      chmod +x /etc/init.d/vnstat_backup
+      /etc/init.d/vnstat_backup enable
+      log "INFO" "vnstat backup service enabled"
+    fi
+    
+    # Run vnstati script if available
+    if [ -f "/www/vnstati/vnstati.sh" ]; then
+      chmod +x /www/vnstati/vnstati.sh
+      /www/vnstati/vnstati.sh
+      log "INFO" "Generated vnstat traffic graphs"
+    fi
+  else
+    log "INFO" "vnstat not installed, skipping configuration"
+  fi
+}
+
+# Function to adjust app categories in LuCI
+adjust_app_categories() {
+  log "STEP" "Adjusting application categories..."
+  
+  # Check if the file exists before modifying
+  if [ -f "/usr/share/luci/menu.d/luci-app-lite-watchdog.json" ]; then
+    cp /usr/share/luci/menu.d/luci-app-lite-watchdog.json /usr/share/luci/menu.d/luci-app-lite-watchdog.json.bak
+    sed -i 's/services/modem/g' /usr/share/luci/menu.d/luci-app-lite-watchdog.json
+    log "INFO" "Adjusted lite-watchdog category to 'modem'"
+  fi
+  
+  # Scan for other menu files that might need adjustment
+  local MENU_DIR="/usr/share/luci/menu.d"
+  if [ -d "$MENU_DIR" ]; then
+    # Move modem-related apps to the modem category
+    for app in "luci-app-modeminfo" "luci-app-sms-tool" "luci-app-mmconfig"; do
+      if [ -f "$MENU_DIR/$app.json" ]; then
+        cp "$MENU_DIR/$app.json" "$MENU_DIR/$app.json.bak"
+        sed -i 's/"services"/"modem"/g' "$MENU_DIR/$app.json"
+        log "INFO" "Moved $app to modem category"
+      fi
+    done
+  fi
+}
+
+# Function to set up shell environment
+setup_shell_environment() {
+  log "STEP" "Setting up shell environment..."
+  
+  # Back up original profile
+  cp /etc/profile /etc/profile.bak
+  
+  # Modify banner display
+  sed -i 's/\[ -f \/etc\/banner \] && cat \/etc\/banner/#&/' /etc/profile
+  sed -i 's/\[ -n "$FAILSAFE" \] && cat \/etc\/banner.failsafe/#&/' /etc/profile
+  
+  # Add custom aliases to profile
+  if ! grep -q "Custom aliases" /etc/profile; then
+    cat << 'EOF' >> /etc/profile
+
+# Custom aliases
+alias ll='ls -la'
+alias mem='free -h'
+alias df='df -h'
+alias update='opkg update'
+alias net='ifconfig'
+alias restart='reboot'
+alias ping='ping -c 4'
+EOF
+    log "INFO" "Added custom aliases to profile"
+  fi
+  
+  # Make utility scripts executable
+  for script in /sbin/sync_time.sh /sbin/free.sh /usr/bin/clock /usr/bin/openclash.sh /usr/bin/cek_sms.sh; do
+    if [ -f "$script" ]; then
+      chmod +x "$script"
+      log "INFO" "Made $script executable"
     fi
   done
   
-  # Apply patches
-  if [ -f "/usr/bin/patchoc.sh" ]; then
-    chmod +x /usr/bin/patchoc.sh
-    log "Patching OpenClash overview..."
-    /usr/bin/patchoc.sh
-    sed -i '/exit 0/i # OpenClash patch' /etc/rc.local
-    sed -i '/exit 0/i #/usr/bin/patchoc.sh' /etc/rc.local
-  fi
-  
-  # Create symbolic links
-  ln -sf /etc/openclash/history/config-wrt.db /etc/openclash/cache.db 2>/dev/null
-  ln -sf /etc/openclash/core/clash_meta /etc/openclash/clash 2>/dev/null
-  
-  # Move configuration file
-  if [ -f "/etc/config/openclash1" ]; then
-    rm -rf /etc/config/openclash
-    mv /etc/config/openclash1 /etc/config/openclash
-    log "Moved OpenClash configuration file"
-  fi
-  
-  log "OpenClash setup complete!"
-else
-  log "OpenClash not detected, cleaning up..."
-  uci delete internet-detector.Openclash 2>/dev/null
-  uci commit internet-detector 2>/dev/null
-  service internet-detector restart
-  rm -rf /etc/config/openclash1
-fi
+  # Custom prompt with colors
+  if ! grep -q "PS1=" /etc/profile || ! grep -q "RTA-WRT" /etc/profile; then
+    cat << 'EOF' >> /etc/profile
 
-# Configure Nikki if installed
-log "Checking and configuring Nikki..."
-if opkg list-installed | grep -q luci-app-nikki; then
-  log "Nikki detected, configuring..."
-  # Create directory structure if it doesn't exist
-  mkdir -p /etc/nikki/run
+# Custom colored prompt
+export PS1='\[\033[01;32m\]RTA-WRT\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]# '
+EOF
+    log "INFO" "Added custom prompt to profile"
+  fi
+}
+
+# Function to configure OpenClash if installed
+configure_openclash() {
+  log "STEP" "Checking and configuring OpenClash..."
   
-  # Set permissions for core files
-  for file in /etc/nikki/run/GeoIP.dat /etc/nikki/run/GeoSite.dat; do
-    if [ -f "$file" ]; then
-      chmod +x "$file"
-      log "Set permissions for $file"
+  if is_package_installed "luci-app-openclash"; then
+    log "INFO" "OpenClash detected, configuring..."
+    
+    # Create directory structure if it doesn't exist
+    mkdir -p /etc/openclash/core
+    mkdir -p /etc/openclash/history
+    chmod 755 /etc/openclash
+    
+    # Set permissions for core files
+    for file in /etc/openclash/core/clash_meta /etc/openclash/GeoIP.dat /etc/openclash/GeoSite.dat /etc/openclash/Country.mmdb; do
+      if [ -f "$file" ]; then
+        chmod +x "$file"
+        log "INFO" "Set permissions for $(basename "$file")"
+      fi
+    done
+    
+    # Apply patches if available
+    if [ -f "/usr/bin/patchoc.sh" ]; then
+      chmod +x /usr/bin/patchoc.sh
+      log "INFO" "Patching OpenClash overview..."
+      /usr/bin/patchoc.sh
+      
+      # Add to rc.local if not already there
+      if ! grep -q "patchoc.sh" /etc/rc.local; then
+        sed -i '/exit 0/i # OpenClash patch' /etc/rc.local
+        sed -i '/exit 0/i /usr/bin/patchoc.sh' /etc/rc.local
+        log "INFO" "Added OpenClash patch to rc.local"
+      fi
     fi
-  done
+    
+    # Create symbolic links
+    ln -sf /etc/openclash/history/config-wrt.db /etc/openclash/cache.db 2>/dev/null
+    ln -sf /etc/openclash/core/clash_meta /etc/openclash/clash 2>/dev/null
+    
+    # Move configuration file if needed
+    if [ -f "/etc/config/openclash1" ]; then
+      if [ -f "/etc/config/openclash" ]; then
+        cp /etc/config/openclash /etc/config/openclash.bak
+      fi
+      mv /etc/config/openclash1 /etc/config/openclash
+      log "INFO" "Moved OpenClash configuration file"
+    fi
+    
+    # Check if OpenClash is running, start if not
+    if ! pgrep -f clash >/dev/null; then
+      /etc/init.d/openclash restart
+      log "INFO" "Started OpenClash service"
+    fi
+    
+    log "INFO" "OpenClash setup complete!"
+  else
+    log "INFO" "OpenClash not detected, cleaning up..."
+    
+    # Clean up any internet-detector references
+    if [ -f "/etc/config/internet-detector" ]; then
+      uci delete internet-detector.Openclash 2>/dev/null
+      uci commit internet-detector 2>/dev/null
+      service internet-detector restart
+    fi
+    
+    # Remove leftover configuration
+    rm -rf /etc/config/openclash1
+  fi
+}
+
+# Function to configure Nikki if installed
+configure_nikki() {
+  log "STEP" "Checking and configuring Nikki..."
   
-  log "Nikki setup complete!"
-else
-  log "Nikki not detected, cleaning up..."
-  rm -rf /etc/config/nikki
-  rm -rf /etc/nikki
-fi
+  if is_package_installed "luci-app-nikki"; then
+    log "INFO" "Nikki detected, configuring..."
+    
+    # Create directory structure if it doesn't exist
+    mkdir -p /etc/nikki/run
+    chmod 755 /etc/nikki
+    
+    # Set permissions for core files
+    for file in /etc/nikki/run/GeoIP.dat /etc/nikki/run/GeoSite.dat; do
+      if [ -f "$file" ]; then
+        chmod +x "$file"
+        log "INFO" "Set permissions for $(basename "$file")"
+      fi
+    done
+    
+    # Check if Nikki is running, start if not
+    if ! pgrep -f nikki >/dev/null; then
+      /etc/init.d/nikki restart
+      log "INFO" "Started Nikki service"
+    fi
+    
+    log "INFO" "Nikki setup complete!"
+  else
+    log "INFO" "Nikki not detected, cleaning up..."
+    rm -rf /etc/config/nikki
+    rm -rf /etc/nikki
+  fi
+}
 
-# Setup PHP for web applications
-log "Setting up PHP..."
-uci set uhttpd.main.ubus_prefix='/ubus'
-uci set uhttpd.main.interpreter='.php=/usr/bin/php-cgi'
-uci set uhttpd.main.index_page='cgi-bin/luci'
-uci add_list uhttpd.main.index_page='index.html'
-uci add_list uhttpd.main.index_page='index.php'
-uci commit uhttpd
+# Function to set up PHP for web applications
+setup_php() {
+  log "STEP" "Setting up PHP..."
+  
+  # Check if PHP is installed
+  if is_package_installed "php8" || is_package_installed "php7"; then
+    # Configure uhttpd for PHP
+    safe_uci set "uhttpd.main.ubus_prefix" "/ubus"
+    safe_uci set "uhttpd.main.interpreter" ".php=/usr/bin/php-cgi"
+    safe_uci set "uhttpd.main.index_page" "cgi-bin/luci"
+    safe_uci add_list "uhttpd.main.index_page" "index.html"
+    safe_uci add_list "uhttpd.main.index_page" "index.php"
+    commit_uci "uhttpd"
+    
+    # Optimize PHP configuration
+    if [ -f "/etc/php.ini" ]; then
+      cp /etc/php.ini /etc/php.ini.bak
+      sed -i -E "s|memory_limit = [0-9]+M|memory_limit = 128M|g" /etc/php.ini
+      sed -i -E "s|max_execution_time = [0-9]+|max_execution_time = 60|g" /etc/php.ini
+      sed -i -E "s|display_errors = On|display_errors = Off|g" /etc/php.ini
+      sed -i -E "s|;date.timezone =|date.timezone = Asia/Jakarta|g" /etc/php.ini
+      log "INFO" "PHP configuration optimized"
+    else
+      log "WARNING" "PHP configuration file not found"
+    fi
+    
+    # Create symbolic links for PHP
+    ln -sf /usr/bin/php-cli /usr/bin/php
+    
+    # Link PHP libraries if needed
+    if [ -d "/usr/lib/php8" ] && [ ! -d "/usr/lib/php" ]; then
+      ln -sf /usr/lib/php8 /usr/lib/php
+      log "INFO" "Created PHP library symlink"
+    fi
+    
+    # Restart uhttpd
+    /etc/init.d/uhttpd restart
+    log "INFO" "PHP setup complete"
+  else
+    log "INFO" "PHP not installed, skipping configuration"
+  fi
+}
 
-# Optimize PHP configuration
-if [ -f "/etc/php.ini" ]; then
-  sed -i -E "s|memory_limit = [0-9]+M|memory_limit = 128M|g" /etc/php.ini
-  sed -i -E "s|max_execution_time = [0-9]+|max_execution_time = 60|g" /etc/php.ini
-  sed -i -E "s|display_errors = On|display_errors = Off|g" /etc/php.ini
-  sed -i -E "s|;date.timezone =|date.timezone = Asia/Jakarta|g" /etc/php.ini
-  log "PHP configuration optimized"
-fi
+# Function to set up TinyFM file manager
+setup_tinyfm() {
+  log "STEP" "Setting up TinyFM file manager..."
+  
+  # Create directory if it doesn't exist
+  mkdir -p /www/tinyfm
+  
+  # Create rootfs symlink for full filesystem access
+  ln -sf / /www/tinyfm/rootfs
+  
+  # Set permissions
+  chmod 755 /www/tinyfm
+  
+  # Add .htaccess protection if PHP is available
+  if is_package_installed "php8" || is_package_installed "php7"; then
+    cat << 'EOF' > /www/tinyfm/.htaccess
+AuthType Basic
+AuthName "Restricted Area"
+AuthUserFile /etc/httpd.htpasswd
+Require valid-user
+EOF
+    
+    # Create password file if it doesn't exist
+    if [ ! -f "/etc/httpd.htpasswd" ]; then
+      echo "admin:\$apr1\$xyz\$1hO6cGk.KwEL11RKr3vKG." > /etc/httpd.htpasswd
+      log "INFO" "Created basic auth for TinyFM (user: admin, password: admin)"
+    fi
+    
+    log "INFO" "TinyFM setup complete with authentication"
+  else
+    log "INFO" "TinyFM setup complete"
+  fi
+}
 
-# Create symbolic links for PHP
-ln -sf /usr/bin/php-cli /usr/bin/php
-[ -d /usr/lib/php8 ] && [ ! -d /usr/lib/php ] && ln -sf /usr/lib/php8 /usr/lib/php
-/etc/init.d/uhttpd restart
+# Function to restore system information script
+restore_sysinfo() {
+  log "STEP" "Restoring system information script..."
+  
+  # Check if backup exists and restore
+  if [ -f "/etc/profile.d/30-sysinfo.sh-bak" ]; then
+    rm -rf /etc/profile.d/30-sysinfo.sh 2>/dev/null
+    mv /etc/profile.d/30-sysinfo.sh-bak /etc/profile.d/30-sysinfo.sh
+    chmod +x /etc/profile.d/30-sysinfo.sh
+    log "INFO" "Restored original system information script"
+  else
+    log "INFO" "No backup of system information script found"
+  fi
+}
 
-# Setup TinyFM file manager
-log "Setting up TinyFM file manager..."
-mkdir -p /www/tinyfm
-ln -sf / /www/tinyfm/rootfs
+# Function to setup secondary install script
+setup_secondary_install() {
+  log "STEP" "Setting up secondary install script..."
+  
+  # Check if script exists and run it
+  if [ -f "/root/install2.sh" ]; then
+    chmod +x /root/install2.sh
+    log "INFO" "Running secondary install script..."
+    /root/install2.sh >> "$LOGFILE" 2>&1
+    check_command "Secondary install script"
+  else
+    log "INFO" "No secondary install script found, skipping"
+  fi
+}
 
-# Set up system information script
-if [ -f "/etc/profile.d/30-sysinfo.sh-bak" ]; then
-  rm -rf /etc/profile.d/30-sysinfo.sh 2>/dev/null
-  mv /etc/profile.d/30-sysinfo.sh-bak /etc/profile.d/30-sysinfo.sh
-  log "Restored original system information script"
-fi
+# Function to complete setup and perform final tasks
+complete_setup() {
+  log "STEP" "==================== CONFIGURATION COMPLETE ===================="
+  
+  # Create summary of changes
+  log "INFO" "Setup Summary:"
+  log "INFO" "- System hostname: RTA-WRT"
+  log "INFO" "- LAN IP: 192.168.1.1"
+  log "INFO" "- WiFi Enabled: Yes (password: rtawrt123)"
+  log "INFO" "- Root password set: Yes (see /root/.credentials)"
+  log "INFO" "- Timezone: Asia/Jakarta"
+  
+  # List installed packages
+  log "INFO" "Installed packages: $(opkg list-installed | wc -l)"
+  
+  # Remove temporary files
+  log "INFO" "Cleaning up and finalizing..."
+  rm -rf /root/install2.sh /tmp/* 2>/dev/null
+  
+  # Update services
+  /etc/init.d/log restart
+  /etc/init.d/system restart
+  /etc/init.d/network restart
+  
+  # Clean up the setup script
+  log "INFO" "Removing setup script from auto-start..."
+  rm -f /etc/uci-defaults/$(basename $0) 2>/dev/null
+  
+  # Generate final record of system state
+  log "INFO" "Recording final system state..."
+  echo "==================== FINAL SYSTEM STATE ====================" >> "$LOGFILE"
+  echo "Date: $(date)" >> "$LOGFILE"
+  echo "Uptime: $(uptime)" >> "$LOGFILE"
+  echo "Memory:" >> "$LOGFILE"
+  free -h >> "$LOGFILE"
+  echo "Storage:" >> "$LOGFILE"
+  df -h >> "$LOGFILE"
+  echo "Network Interfaces:" >> "$LOGFILE"
+  ifconfig | grep -E "^[a-z]|inet " >> "$LOGFILE"
+  echo "Active Services:" >> "$LOGFILE"
+  ls /etc/rc.d/S* | cut -d/ -f4 | sort >> "$LOGFILE"
+  
+  # Create final log copy in a permanent location
+  cp "$LOGFILE" "/root/setup_complete_$(date +%Y%m%d_%H%M%S).log"
+  
+  log "INFO" "Setup complete! The system will now reboot in 5 seconds..."
+  sync
+  sleep 5
+  reboot
+}
 
-# Complete setup
-log "==================== CONFIGURATION COMPLETE ===================="
-log "All setup tasks completed successfully!"
-log "Cleaning up and finalizing..."
+# Main execution function
+main() {
+  # Print banner
+  echo "=========================================================="
+  echo "          RTA-WRT Router Configuration Script             "
+  echo "                     Version 2.0                          "
+  echo "=========================================================="
+  
+  # Execute functions in sequence with error handling
+  print_system_info
+  create_backup
+  customize_firmware
+  check_tunnel_apps
+  setup_root_password
+  setup_timezone
+  setup_network
+  disable_ipv6
+  setup_wireless
+  setup_package_management
+  setup_ui
+  setup_usb_modem
+  setup_traffic_monitoring
+  adjust_app_categories
+  setup_shell_environment
+  configure_openclash
+  configure_nikki
+  setup_php
+  setup_tinyfm
+  restore_sysinfo
+  setup_secondary_install
+  complete_setup
+}
 
-# Remove temporary files
-rm -rf /root/install2.sh /tmp/* 2>/dev/null
-
-# Clean up the setup script
-rm -f /etc/uci-defaults/$(basename $0) 2>/dev/null
-
-echo "Setup complete! The system will now reboot in 5 seconds..."
-sleep 5
-reboot
-
+# Run the main function
+main
 exit 0

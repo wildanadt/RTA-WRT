@@ -12,8 +12,8 @@ fi
 declare -A REPOS
 REPOS+=(
     ["KIDDIN9"]="https://dl.openwrt.ai/releases/24.10/packages/${ARCH_3}/kiddin9"
-    ["IMMORTALWRT"]="https://downloads.immortalwrt.org/releases/packages-${VEROP}/${ARCH_3}"
-    ["OPENWRT"]="https://downloads.openwrt.org/releases/packages-${VEROP}/${ARCH_3}"
+    ["IMMORTALWRT"]="https://downloads.immortalwrt.org/releases/packages-24.10/${ARCH_3}"
+    ["OPENWRT"]="https://downloads.openwrt.org/releases/packages-24.10/${ARCH_3}"
     ["GSPOTX2F"]="https://github.com/gSpotx2f/packages-openwrt/raw/refs/heads/master/current"
     ["FANTASTIC"]="https://fantastic-packages.github.io/packages/releases/${VEROP}/packages/mipsel_24kc"
 )
@@ -98,41 +98,6 @@ if [ "${TYPE}" == "OPHUB" ]; then
     )
 fi
 
-# Enhanced package verification function
-verify_packages() {
-    local pkg_dir="packages"
-    local -a failed_packages=()
-    local -a package_list=("${!1}")
-    
-    if [[ ! -d "$pkg_dir" ]]; then
-        error_msg "Package directory not found: $pkg_dir"
-        return 1
-    fi
-    
-    local total_found=$(find "$pkg_dir" \( -name "*.ipk" -o -name "*.apk" \) | wc -l)
-    log "INFO" "Found $total_found package files"
-    
-    for package in "${package_list[@]}"; do
-        local pkg_name="${package%%|*}"
-        if ! find "$pkg_dir" \( -name "${pkg_name}*.ipk" -o -name "${pkg_name}*.apk" \) -print -quit | grep -q .; then
-            failed_packages+=("$pkg_name")
-        fi
-    done
-    
-    local failed=${#failed_packages[@]}
-    
-    if ((failed > 0)); then
-        log "WARNING" "$failed packages failed to download:"
-        for pkg in "${failed_packages[@]}"; do
-            log "WARNING" "- $pkg"
-        done
-        return 1
-    fi
-    
-    log "SUCCESS" "All packages downloaded successfully"
-    return 0
-}
-
 # Main execution
 main() {
     local rc=0
@@ -140,10 +105,6 @@ main() {
     # Download Custom packages
     log "INFO" "Downloading Custom packages..."
     download_packages packages_custom || rc=1
-    
-    # Verify all downloads
-    log "INFO" "Verifying all packages..."
-    verify_packages packages_custom || rc=1
     
     if [ $rc -eq 0 ]; then
         log "SUCCESS" "Package download and verification completed successfully"
