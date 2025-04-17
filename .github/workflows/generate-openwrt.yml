@@ -616,7 +616,7 @@ jobs:
 
   notify:
     name: Notify Release
-    if: github.event.inputs.notify == 'true'
+    if: github.event.inputs.notify == 'true' && build-firmware.results == 'success'
     needs: [prebuild, build-firmware]
     runs-on: ubuntu-latest
     steps:
