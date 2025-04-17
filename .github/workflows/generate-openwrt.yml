@@ -81,6 +81,11 @@ on:
         required: false
         default: "true"
         type: boolean
+      notify:
+        description: "Send notification to Telegram"
+        required: false
+        default: "true"
+        type: boolean
 
 env:
   TZ: Asia/Jakarta
@@ -611,6 +616,7 @@ jobs:
 
   notify:
     name: Notify Release
+    if: github.event.inputs.notify == 'true'
     needs: [prebuild, build-firmware]
     runs-on: ubuntu-latest
     steps:
