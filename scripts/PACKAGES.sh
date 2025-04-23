@@ -113,7 +113,7 @@ declare_packages() {
 }
 
 # Download all packages with error tracking
-download_packages() {
+download_allpackages() {
     local package_list_name=$1
     local -n package_list=$package_list_name
     local total_packages=${#package_list[@]}
@@ -125,7 +125,7 @@ download_packages() {
 
     for package_info in "${package_list[@]}"; do
         local package_name="${package_info%%|*}"
-        if download_package "$package_info"; then
+        if download_packages "$package_info"; then
             ((success_count++))
         else
             ((fail_count++))
@@ -153,7 +153,7 @@ main() {
 
     # Download Custom packages
     log "INFO" "Downloading Custom packages..."
-    if ! download_packages packages_custom; then
+    if ! download_allpackages packages_custom; then
         rc=1
     fi
 
