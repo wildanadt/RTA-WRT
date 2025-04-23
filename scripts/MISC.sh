@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # Source the include file containing common functions and variables
 if [[ ! -f "./scripts/INCLUDE.sh" ]]; then
     echo "ERROR: INCLUDE.sh not found in ./scripts/" >&2
@@ -8,115 +10,69 @@ fi
 
 . ./scripts/INCLUDE.sh
 
-# Constants
-readonly SYNC_TIME_SCRIPT="https://raw.githubusercontent.com/frizkyiman/auto-sync-time/main/sbin/sync_time.sh"
-readonly CLOCK_SCRIPT="https://raw.githubusercontent.com/frizkyiman/auto-sync-time/main/usr/bin/clock"
-readonly FIX_READONLY_SCRIPT="https://raw.githubusercontent.com/frizkyiman/fix-read-only/main/install2.sh"
-
 # Initialize environment
 init_environment() {
-    log "INFO" "Starting custom configuration setup"
-    log "DEBUG" "Working directory: ${PWD}"
-}
-
-# Update initialization settings
-update_init_settings() {
-    log "INFO" "Updating initialization settings"
-    
-    local init_file="files/etc/uci-defaults/99-init-settings.sh"
-    
-    if [[ ! -f "${init_file}" ]]; then
-        error_msg "Init settings file not found: ${init_file}"
-        return 1
-    fi
-
-    # Update date in init settings
-    if ! sed -i "s/Ouc3kNF6/${DATE}/g" "${init_file}"; then
-        error_msg "Failed to update date in init settings"
-        return 1
-    fi
-
-    return 0
+    log "INFO" "Starting: Downloading misc files and setting up configuration"
+    log "INFO" "Current path: $PWD"
 }
 
 # Setup base-specific configurations
 setup_base_config() {
-    local init_file="files/etc/uci-defaults/99-init-settings.sh"
-    
+    # Update date in init settings
+    sed -i "s/Ouc3kNF6/${DATE}/g" files/etc/uci-defaults/99-init-settings.sh
+
     case "${BASE}" in
-        "openwrt")
-            log "INFO" "Configuring OpenWrt specific settings"
-            if ! sed -i '/# setup misc settings/ a\mv \/www\/luci-static\/resources\/view\/status\/include\/29_temp.js \/www\/luci-static\/resources\/view\/status\/include\/17_temp.js' "${init_file}"; then
-                error_msg "Failed to add OpenWrt temp.js configuration"
-                return 1
-            fi
+        openwrt)
+            log "INFO" "Applying OpenWrt-specific configuration"
+            sed -i '/# setup misc settings/ a\mv \/www\/luci-static\/resources\/view\/status\/include\/29_temp.js \/www\/luci-static\/resources\/view\/status\/include\/17_temp.js' files/etc/uci-defaults/99-init-settings.sh
             ;;
-        "immortalwrt")
-            log "INFO" "Configuring ImmortalWrt specific settings"
-            # Add ImmortalWrt specific configurations here
+        immortalwrt)
+            log "INFO" "Applying ImmortalWrt-specific configuration"
             ;;
         *)
-            log "WARNING" "Unknown base system: ${BASE}"
+            log "WARN" "Unknown base system: ${BASE}"
             ;;
     esac
-    
-    return 0
 }
 
 # Handle Amlogic-specific files
 handle_amlogic_files() {
     case "${TYPE}" in
-        "OPHUB"|"ULO")
+        OPHUB|ULO)
             log "INFO" "Removing Amlogic-specific files"
-            local amlogic_files=(
-                "files/etc/uci-defaults/70-rootpt-resize"
-                "files/etc/uci-defaults/80-rootfs-resize"
-                "files/etc/sysupgrade.conf"
-            )
-            
-            for file in "${amlogic_files[@]}"; do
-                if [[ -f "${file}" ]]; then
-                    rm -f "${file}" || {
-                        log "WARNING" "Failed to remove Amlogic file: ${file}"
-                    }
-                fi
-            done
+            rm -f files/etc/uci-defaults/70-rootpt-resize
+            rm -f files/etc/uci-defaults/80-rootfs-resize
+            rm -f files/etc/sysupgrade.conf
             ;;
         *)
-            log "DEBUG" "No Amlogic files to handle for system type: ${TYPE}"
+            log "INFO" "Non-Amlogic system type: ${TYPE}"
             ;;
     esac
-    
-    return 0
 }
 
 # Setup branch-specific configurations
 setup_branch_config() {
-    local branch_major=$(echo "${BRANCH}" | cut -d'.' -f1)
-    
+    local branch_major
+    branch_major=$(echo "${BRANCH}" | cut -d'.' -f1)
+
     case "${branch_major}" in
-        "24")
-            log "INFO" "Configuring for branch 24.x"
-            # Add branch 24 specific configurations here
+        24)
+            log "INFO" "Applying settings for branch 24.x"
             ;;
-        "23")
-            log "INFO" "Configuring for branch 23.x"
-            # Add branch 23 specific configurations here
+        23)
+            log "INFO" "Applying settings for branch 23.x"
             ;;
         *)
-            log "WARNING" "Unknown branch version: ${BRANCH}"
+            log "WARN" "Unknown branch version: ${BRANCH}"
             ;;
     esac
-    
-    return 0
 }
 
 # Configure file permissions for Amlogic
 configure_amlogic_permissions() {
     case "${TYPE}" in
-        "OPHUB"|"ULO")
-            log "INFO" "Setting up Amlogic file permissions"
-            local init_file="files/etc/uci-defaults/99-init-settings.sh"
+        OPHUB|ULO)
+            log "INFO" "Setting executable permissions on Amlogic-related scripts"
             local netifd_files=(
                 "/lib/netifd/proto/3g.sh"
                 "/lib/netifd/proto/dhcp.sh"
@@ -133,116 +89,45 @@ configure_amlogic_permissions() {
                 "/lib/netifd/utils.sh"
                 "/lib/wifi/mac80211.sh"
             )
-            
+
             for file in "${netifd_files[@]}"; do
-                if ! sed -i "/# setup misc settings/ a\chmod +x ${file}" "${init_file}"; then
-                    log "WARNING" "Failed to add permission setting for ${file}"
-                fi
+                sed -i "/# setup misc settings/ a\chmod +x $file" files/etc/uci-defaults/99-init-settings.sh
             done
             ;;
         *)
-            log "INFO" "Removing lib directory for non-Amlogic build"
-            if [[ -d "files/lib" ]]; then
-                rm -rf "files/lib" || {
-                    error_msg "Failed to remove lib directory"
-                    return 1
-                }
-            fi
+            log "INFO" "Cleaning up lib directory for non-Amlogic build"
+            rm -rf files/lib
             ;;
     esac
-    
-    return 0
-}
-
-# Download a single script with retries
-download_script() {
-    local url="$1"
-    local dest_dir="$2"
-    local max_retries=3
-    local retry_delay=2
-    local retries=0
-    local success=false
-    
-    # Create destination directory if it doesn't exist
-    mkdir -p "${dest_dir}" || {
-        error_msg "Failed to create directory: ${dest_dir}"
-        return 1
-    }
-    
-    local filename=$(basename "${url}")
-    local dest_path="${dest_dir}/${filename}"
-    
-    while [[ ${retries} -lt ${max_retries} && ${success} == false ]]; do
-        if wget --no-check-certificate -nv -O "${dest_path}" "${url}"; then
-            success=true
-            # Make the script executable
-            chmod +x "${dest_path}" || {
-                log "WARNING" "Failed to make script executable: ${dest_path}"
-            }
-        else
-            ((retries++))
-            log "WARNING" "Download failed (attempt ${retries}/${max_retries}): ${url}"
-            sleep ${retry_delay}
-        fi
-    done
-    
-    if [[ ${success} == false ]]; then
-        error_msg "Failed to download script after ${max_retries} attempts: ${url}"
-        return 1
-    fi
-    
-    return 0
 }
 
 # Download custom scripts
 download_custom_scripts() {
     log "INFO" "Downloading custom scripts"
-    
+
     local scripts=(
-        "${SYNC_TIME_SCRIPT}|files/sbin"
-        "${CLOCK_SCRIPT}|files/usr/bin"
-        "${FIX_READONLY_SCRIPT}|files/root"
+        "https://raw.githubusercontent.com/frizkyiman/auto-sync-time/main/sbin/sync_time.sh|files/sbin"
+        "https://raw.githubusercontent.com/frizkyiman/auto-sync-time/main/usr/bin/clock|files/usr/bin"
+        "https://raw.githubusercontent.com/frizkyiman/fix-read-only/main/install2.sh|files/root"
     )
-    
-    local any_failed=false
-    
+
     for script in "${scripts[@]}"; do
-        IFS='|' read -r url dest <<< "${script}"
-        if ! download_script "${url}" "${dest}"; then
-            any_failed=true
-        fi
+        IFS='|' read -r url path <<< "$script"
+        mkdir -p "$path"
+        wget --no-check-certificate -nv -P "$path" "$url" || error "Failed to download: $url"
     done
-    
-    if [[ ${any_failed} == true ]]; then
-        error_msg "Some script downloads failed"
-        return 1
-    fi
-    
-    return 0
 }
 
 # Main execution
 main() {
-    local exit_code=0
-    
     init_environment
-    
-    # Execute each configuration step and track failures
-    update_init_settings || exit_code=1
-    setup_base_config || exit_code=1
-    handle_amlogic_files || exit_code=1
-    setup_branch_config || exit_code=1
-    configure_amlogic_permissions || exit_code=1
-    download_custom_scripts || exit_code=1
-    
-    if [[ ${exit_code} -eq 0 ]]; then
-        log "SUCCESS" "All custom configuration setup completed successfully!"
-    else
-        error_msg "Configuration setup completed with errors"
-    fi
-    
-    exit ${exit_code}
+    setup_base_config
+    handle_amlogic_files
+    setup_branch_config
+    configure_amlogic_permissions
+    download_custom_scripts
+    log "SUCCESS" "All custom configuration steps completed successfully!"
 }
 
-# Execute main function
-main "$@"
+# Execute main
+main
