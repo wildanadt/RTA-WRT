@@ -112,65 +112,6 @@ declare_packages() {
     fi
 }
 
-# Download package with retries and error handling
-download_package() {
-    local package_info=$1
-    local package_name="${package_info%%|*}"
-    local package_url="${package_info##*|}"
-    local retries=0
-    local success=false
-
-    # Create cache directory if it doesn't exist
-    mkdir -p "${PACKAGE_CACHE_DIR}"
-
-    log "DEBUG" "Attempting to download package: ${package_name} from ${package_url}"
-
-    while [[ $retries -lt $MAX_RETRIES && $success == false ]]; do
-        if [[ $package_url == *"api.github.com"* ]]; then
-            # Handle GitHub API packages
-            local download_url=$(curl -s "$package_url" | grep "browser_download_url" | grep -oE "https.*${package_name}.*\.ipk" | head -n 1)
-            if [[ -n "$download_url" ]]; then
-                if curl -L -o "${PACKAGE_CACHE_DIR}/${package_name}.ipk" "$download_url"; then
-                    success=true
-                fi
-            fi
-        else
-            # Handle regular packages
-            if curl -L -o "${PACKAGE_CACHE_DIR}/${package_name}.ipk" "${package_url}/${package_name}.ipk"; then
-                success=true
-            fi
-        fi
-
-        if [[ $success == false ]]; then
-            ((retries++))
-            log "WARNING" "Download failed for ${package_name}, retry ${retries}/${MAX_RETRIES}"
-            sleep $RETRY_DELAY
-        fi
-    done
-
-    if [[ $success == false ]]; then
-        log "ERROR" "Failed to download package: ${package_name} after ${MAX_RETRIES} attempts"
-        return 1
-    fi
-
-    log "INFO" "Successfully downloaded package: ${package_name}"
-    return 0
-}
-
-# Verify package integrity
-verify_package() {
-    local package_name=$1
-    local package_file="${PACKAGE_CACHE_DIR}/${package_name}.ipk"
-
-    if [[ ! -f "$package_file" ]]; then
-        log "ERROR" "Package file not found: ${package_file}"
-        return 1
-    fi
-
-    log "DEBUG" "Package ${package_name} verification passed"
-    return 0
-}
-
 # Download all packages with error tracking
 download_packages() {
     local package_list_name=$1
@@ -184,7 +125,7 @@ download_packages() {
 
     for package_info in "${package_list[@]}"; do
         local package_name="${package_info%%|*}"
-        if download_package "$package_info" && verify_package "$package_name"; then
+        if download_package "$package_info"; then
             ((success_count++))
         else
             ((fail_count++))
