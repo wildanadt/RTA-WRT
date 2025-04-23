@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Source the include file containing common functions and variables
+if [[ ! -f "./scripts/INCLUDE.sh" ]]; then
+    echo "ERROR: INCLUDE.sh not found in ./scripts/" >&2
+    exit 1
+fi
+
 . ./scripts/INCLUDE.sh
 
 # Constants

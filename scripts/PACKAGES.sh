@@ -8,11 +8,6 @@ fi
 
 . ./scripts/INCLUDE.sh
 
-# Constants
-readonly PACKAGE_CACHE_DIR="${GITHUB_WORKSPACE}/package_cache"
-readonly MAX_RETRIES=3
-readonly RETRY_DELAY=5
-
 # Define repositories with proper quoting and error handling
 declare -A REPOS
 initialize_repositories() {
@@ -112,38 +107,6 @@ declare_packages() {
     fi
 }
 
-# Download all packages with error tracking
-download_allpackages() {
-    local package_list_name=$1
-    local -n package_list=$package_list_name
-    local total_packages=${#package_list[@]}
-    local success_count=0
-    local fail_count=0
-    local failed_packages=()
-
-    log "INFO" "Starting download of ${total_packages} packages..."
-
-    for package_info in "${package_list[@]}"; do
-        local package_name="${package_info%%|*}"
-        if download_packages "$package_info"; then
-            ((success_count++))
-        else
-            ((fail_count++))
-            failed_packages+=("$package_name")
-        fi
-    done
-
-    log "SUMMARY" "Package download results:"
-    log "SUMMARY" "  Successfully downloaded: ${success_count}/${total_packages}"
-    if [[ $fail_count -gt 0 ]]; then
-        log "WARNING" "  Failed to download: ${fail_count} packages"
-        log "WARNING" "  Failed packages: ${failed_packages[*]}"
-        return 1
-    fi
-
-    return 0
-}
-
 # Main execution function
 main() {
     local rc=0
@@ -153,7 +116,7 @@ main() {
 
     # Download Custom packages
     log "INFO" "Downloading Custom packages..."
-    if ! download_allpackages packages_custom; then
+    if ! download_packages packages_custom; then
         rc=1
     fi
 
