@@ -2,119 +2,238 @@
 
 # Source the include file containing common functions and variables
 if [[ ! -f "./scripts/INCLUDE.sh" ]]; then
-    error_msg "INCLUDE.sh not found in ./scripts/"
+    echo "ERROR: INCLUDE.sh not found in ./scripts/" >&2
     exit 1
 fi
 
 . ./scripts/INCLUDE.sh
 
-# Define repositories with proper quoting
+# Constants
+readonly PACKAGE_CACHE_DIR="${GITHUB_WORKSPACE}/package_cache"
+readonly MAX_RETRIES=3
+readonly RETRY_DELAY=5
+
+# Define repositories with proper quoting and error handling
 declare -A REPOS
-REPOS+=(
-    ["KIDDIN9"]="https://dl.openwrt.ai/releases/24.10/packages/${ARCH_3}/kiddin9"
-    ["IMMORTALWRT"]="https://downloads.immortalwrt.org/releases/packages-24.10/${ARCH_3}"
-    ["OPENWRT"]="https://downloads.openwrt.org/releases/packages-24.10/${ARCH_3}"
-    ["GSPOTX2F"]="https://github.com/gSpotx2f/packages-openwrt/raw/refs/heads/master/current"
-    ["FANTASTIC"]="https://fantastic-packages.github.io/packages/releases/${VEROP}/packages/mipsel_24kc"
-)
+initialize_repositories() {
+    local version="24.10"
+    REPOS=(
+        ["KIDDIN9"]="https://dl.openwrt.ai/releases/${version}/packages/${ARCH_3}/kiddin9"
+        ["IMMORTALWRT"]="https://downloads.immortalwrt.org/releases/packages-${version}/${ARCH_3}"
+        ["OPENWRT"]="https://downloads.openwrt.org/releases/packages-${version}/${ARCH_3}"
+        ["GSPOTX2F"]="https://github.com/gSpotx2f/packages-openwrt/raw/refs/heads/master/current"
+        ["FANTASTIC"]="https://fantastic-packages.github.io/packages/releases/${VEROP}/packages/mipsel_24kc"
+    )
+}
 
 # Define package categories with improved structure
-declare -a packages_custom
-packages_custom+=(
-    "modemmanager-rpcd_|${REPOS[OPENWRT]}/packages"
-    "luci-proto-modemmanager_|${REPOS[OPENWRT]}/luci"
-    "libqmi_|${REPOS[OPENWRT]}/packages"
-    "libmbim_|${REPOS[OPENWRT]}/packages"
-    "modemmanager_|${REPOS[OPENWRT]}/packages"
-    "sms-tool_|${REPOS[OPENWRT]}/packages"
-    "tailscale_|${REPOS[OPENWRT]}/packages"
-    "python3-speedtest-cli_|${REPOS[OPENWRT]}/packages"
+declare_packages() {
+    packages_custom=(
+        # OPENWRT packages
+        "modemmanager-rpcd_|${REPOS[OPENWRT]}/packages"
+        "luci-proto-modemmanager_|${REPOS[OPENWRT]}/luci"
+        "libqmi_|${REPOS[OPENWRT]}/packages"
+        "libmbim_|${REPOS[OPENWRT]}/packages"
+        "modemmanager_|${REPOS[OPENWRT]}/packages"
+        "sms-tool_|${REPOS[OPENWRT]}/packages"
+        "tailscale_|${REPOS[OPENWRT]}/packages"
+        "python3-speedtest-cli_|${REPOS[OPENWRT]}/packages"
 
-    "luci-app-tailscale_|${REPOS[KIDDIN9]}"
-    "luci-app-diskman_|${REPOS[KIDDIN9]}"
-    "modeminfo-serial-zte_|${REPOS[KIDDIN9]}"
-    "modeminfo-serial-gosun_|${REPOS[KIDDIN9]}"
-    "modeminfo-qmi_|${REPOS[KIDDIN9]}"
-    "modeminfo-serial-yuge_|${REPOS[KIDDIN9]}"
-    "modeminfo-serial-thales_|${REPOS[KIDDIN9]}"
-    "modeminfo-serial-tw_|${REPOS[KIDDIN9]}"
-    "modeminfo-serial-meig_|${REPOS[KIDDIN9]}"
-    "modeminfo-serial-styx_|${REPOS[KIDDIN9]}"
-    "modeminfo-serial-mikrotik_|${REPOS[KIDDIN9]}"
-    "modeminfo-serial-dell_|${REPOS[KIDDIN9]}"
-    "modeminfo-serial-sierra_|${REPOS[KIDDIN9]}"
-    "modeminfo-serial-quectel_|${REPOS[KIDDIN9]}"
-    "modeminfo-serial-huawei_|${REPOS[KIDDIN9]}"
-    "modeminfo-serial-xmm_|${REPOS[KIDDIN9]}"
-    "modeminfo-serial-telit_|${REPOS[KIDDIN9]}"
-    "modeminfo-serial-fibocom_|${REPOS[KIDDIN9]}"
-    "modeminfo-serial-simcom_|${REPOS[KIDDIN9]}"
-    "modeminfo_|${REPOS[KIDDIN9]}"
-    "luci-app-modeminfo_|${REPOS[KIDDIN9]}"
-    "atinout_|${REPOS[KIDDIN9]}"
-    "luci-app-poweroffdevice_|${REPOS[KIDDIN9]}"
-    "xmm-modem_|${REPOS[KIDDIN9]}"
-    "luci-app-lite-watchdog_|${REPOS[KIDDIN9]}"
-    "luci-theme-alpha_|${REPOS[KIDDIN9]}"
-    "luci-app-adguardhome_|${REPOS[KIDDIN9]}"
-    "sing-box_|${REPOS[KIDDIN9]}"
-    "mihomo_|${REPOS[KIDDIN9]}"
-    "luci-app-droidmodem_|${REPOS[KIDDIN9]}"
+        # KIDDIN9 packages
+        "luci-app-tailscale_|${REPOS[KIDDIN9]}"
+        "luci-app-diskman_|${REPOS[KIDDIN9]}"
+        "modeminfo-serial-zte_|${REPOS[KIDDIN9]}"
+        "modeminfo-serial-gosun_|${REPOS[KIDDIN9]}"
+        "modeminfo-qmi_|${REPOS[KIDDIN9]}"
+        "modeminfo-serial-yuge_|${REPOS[KIDDIN9]}"
+        "modeminfo-serial-thales_|${REPOS[KIDDIN9]}"
+        "modeminfo-serial-tw_|${REPOS[KIDDIN9]}"
+        "modeminfo-serial-meig_|${REPOS[KIDDIN9]}"
+        "modeminfo-serial-styx_|${REPOS[KIDDIN9]}"
+        "modeminfo-serial-mikrotik_|${REPOS[KIDDIN9]}"
+        "modeminfo-serial-dell_|${REPOS[KIDDIN9]}"
+        "modeminfo-serial-sierra_|${REPOS[KIDDIN9]}"
+        "modeminfo-serial-quectel_|${REPOS[KIDDIN9]}"
+        "modeminfo-serial-huawei_|${REPOS[KIDDIN9]}"
+        "modeminfo-serial-xmm_|${REPOS[KIDDIN9]}"
+        "modeminfo-serial-telit_|${REPOS[KIDDIN9]}"
+        "modeminfo-serial-fibocom_|${REPOS[KIDDIN9]}"
+        "modeminfo-serial-simcom_|${REPOS[KIDDIN9]}"
+        "modeminfo_|${REPOS[KIDDIN9]}"
+        "luci-app-modeminfo_|${REPOS[KIDDIN9]}"
+        "atinout_|${REPOS[KIDDIN9]}"
+        "luci-app-poweroffdevice_|${REPOS[KIDDIN9]}"
+        "xmm-modem_|${REPOS[KIDDIN9]}"
+        "luci-app-lite-watchdog_|${REPOS[KIDDIN9]}"
+        "luci-theme-alpha_|${REPOS[KIDDIN9]}"
+        "luci-app-adguardhome_|${REPOS[KIDDIN9]}"
+        "sing-box_|${REPOS[KIDDIN9]}"
+        "mihomo_|${REPOS[KIDDIN9]}"
+        "luci-app-droidmodem_|${REPOS[KIDDIN9]}"
 
-    "luci-app-zerotier_|${REPOS[IMMORTALWRT]}/luci"
-    "luci-app-ramfree_|${REPOS[IMMORTALWRT]}/luci"
-    "luci-app-3ginfo-lite_|${REPOS[IMMORTALWRT]}/luci"
-    "modemband_|${REPOS[IMMORTALWRT]}/packages"
-    "luci-app-modemband_|${REPOS[IMMORTALWRT]}/luci"
-    "luci-app-sms-tool-js_|${REPOS[IMMORTALWRT]}/luci"
-    "dns2tcp_|${REPOS[IMMORTALWRT]}/packages"
-    "luci-app-argon-config_|${REPOS[IMMORTALWRT]}/luci"
-    "luci-theme-argon_|${REPOS[IMMORTALWRT]}/luci"
-    "luci-app-openclash_|${REPOS[IMMORTALWRT]}/luci"
-    "luci-app-passwall_|${REPOS[IMMORTALWRT]}/luci"
+        # IMMORTALWRT packages
+        "luci-app-zerotier_|${REPOS[IMMORTALWRT]}/luci"
+        "luci-app-ramfree_|${REPOS[IMMORTALWRT]}/luci"
+        "luci-app-3ginfo-lite_|${REPOS[IMMORTALWRT]}/luci"
+        "modemband_|${REPOS[IMMORTALWRT]}/packages"
+        "luci-app-modemband_|${REPOS[IMMORTALWRT]}/luci"
+        "luci-app-sms-tool-js_|${REPOS[IMMORTALWRT]}/luci"
+        "dns2tcp_|${REPOS[IMMORTALWRT]}/packages"
+        "luci-app-argon-config_|${REPOS[IMMORTALWRT]}/luci"
+        "luci-theme-argon_|${REPOS[IMMORTALWRT]}/luci"
+        "luci-app-openclash_|${REPOS[IMMORTALWRT]}/luci"
+        "luci-app-passwall_|${REPOS[IMMORTALWRT]}/luci"
 
-    "luci-app-internet-detector_|${REPOS[GSPOTX2F]}"
-    "internet-detector_|${REPOS[GSPOTX2F]}"
-    "internet-detector-mod-modem-restart_|${REPOS[GSPOTX2F]}"
-    "luci-app-cpu-status-mini_|${REPOS[GSPOTX2F]}"
-    "luci-app-disks-info_|${REPOS[GSPOTX2F]}"
-    "luci-app-log-viewer_|${REPOS[GSPOTX2F]}"
-    "luci-app-temp-status_|${REPOS[GSPOTX2F]}"
+        # GSPOTX2F packages
+        "luci-app-internet-detector_|${REPOS[GSPOTX2F]}"
+        "internet-detector_|${REPOS[GSPOTX2F]}"
+        "internet-detector-mod-modem-restart_|${REPOS[GSPOTX2F]}"
+        "luci-app-cpu-status-mini_|${REPOS[GSPOTX2F]}"
+        "luci-app-disks-info_|${REPOS[GSPOTX2F]}"
+        "luci-app-log-viewer_|${REPOS[GSPOTX2F]}"
+        "luci-app-temp-status_|${REPOS[GSPOTX2F]}"
 
-    "luci-app-netspeedtest_|${REPOS[FANTASTIC]}/luci"
+        # FANTASTIC packages
+        "luci-app-netspeedtest_|${REPOS[FANTASTIC]}/luci"
 
-    "luci-app-alpha-config_|https://api.github.com/repos/animegasan/luci-app-alpha-config/releases/latest"
-    "luci-theme-material3_|https://api.github.com/repos/AngelaCooljx/luci-theme-material3/releases/latest"
-    "luci-app-neko_|https://api.github.com/repos/nosignals/openwrt-neko/releases/latest"
-    "luci-theme-rtawrt_|https://api.github.com/repos/rizkikotet-dev/luci-theme-rtawrt/releases/latest"
-    "luci-app-netmonitor_|https://api.github.com/repos/rizkikotet-dev/luci-app-netmonitor/releases/latest"
-)
-
-if [ "${TYPE}" == "OPHUB" ]; then
-    log "INFO" "Adding Amlogic-specific packages..."
-    packages_custom+=(
-        "luci-app-amlogic_|https://api.github.com/repos/ophub/luci-app-amlogic/releases/latest"
+        # GitHub packages
+        "luci-app-alpha-config_|https://api.github.com/repos/animegasan/luci-app-alpha-config/releases/latest"
+        "luci-theme-material3_|https://api.github.com/repos/AngelaCooljx/luci-theme-material3/releases/latest"
+        "luci-app-neko_|https://api.github.com/repos/nosignals/openwrt-neko/releases/latest"
+        "luci-theme-rtawrt_|https://api.github.com/repos/rizkikotet-dev/luci-theme-rtawrt/releases/latest"
+        "luci-app-netmonitor_|https://api.github.com/repos/rizkikotet-dev/luci-app-netmonitor/releases/latest"
     )
-fi
 
-# Main execution
+    if [[ "${TYPE}" == "OPHUB" ]]; then
+        log "INFO" "Adding Amlogic-specific packages..."
+        packages_custom+=(
+            "luci-app-amlogic_|https://api.github.com/repos/ophub/luci-app-amlogic/releases/latest"
+        )
+    fi
+}
+
+# Download package with retries and error handling
+download_package() {
+    local package_info=$1
+    local package_name="${package_info%%|*}"
+    local package_url="${package_info##*|}"
+    local retries=0
+    local success=false
+
+    # Create cache directory if it doesn't exist
+    mkdir -p "${PACKAGE_CACHE_DIR}"
+
+    log "DEBUG" "Attempting to download package: ${package_name} from ${package_url}"
+
+    while [[ $retries -lt $MAX_RETRIES && $success == false ]]; do
+        if [[ $package_url == *"api.github.com"* ]]; then
+            # Handle GitHub API packages
+            local download_url=$(curl -s "$package_url" | grep "browser_download_url" | grep -oE "https.*${package_name}.*\.ipk" | head -n 1)
+            if [[ -n "$download_url" ]]; then
+                if curl -L -o "${PACKAGE_CACHE_DIR}/${package_name}.ipk" "$download_url"; then
+                    success=true
+                fi
+            fi
+        else
+            # Handle regular packages
+            if curl -L -o "${PACKAGE_CACHE_DIR}/${package_name}.ipk" "${package_url}/${package_name}.ipk"; then
+                success=true
+            fi
+        fi
+
+        if [[ $success == false ]]; then
+            ((retries++))
+            log "WARNING" "Download failed for ${package_name}, retry ${retries}/${MAX_RETRIES}"
+            sleep $RETRY_DELAY
+        fi
+    done
+
+    if [[ $success == false ]]; then
+        log "ERROR" "Failed to download package: ${package_name} after ${MAX_RETRIES} attempts"
+        return 1
+    fi
+
+    log "INFO" "Successfully downloaded package: ${package_name}"
+    return 0
+}
+
+# Verify package integrity
+verify_package() {
+    local package_name=$1
+    local package_file="${PACKAGE_CACHE_DIR}/${package_name}.ipk"
+
+    if [[ ! -f "$package_file" ]]; then
+        log "ERROR" "Package file not found: ${package_file}"
+        return 1
+    fi
+
+    # Simple verification - check file size
+    local file_size=$(stat -c%s "$package_file")
+    if [[ $file_size -lt 1024 ]]; then
+        log "ERROR" "Package ${package_name} appears to be too small (${file_size} bytes)"
+        return 1
+    fi
+
+    log "DEBUG" "Package ${package_name} verification passed"
+    return 0
+}
+
+# Download all packages with error tracking
+download_packages() {
+    local package_list_name=$1
+    local -n package_list=$package_list_name
+    local total_packages=${#package_list[@]}
+    local success_count=0
+    local fail_count=0
+    local failed_packages=()
+
+    log "INFO" "Starting download of ${total_packages} packages..."
+
+    for package_info in "${package_list[@]}"; do
+        local package_name="${package_info%%|*}"
+        if download_package "$package_info" && verify_package "$package_name"; then
+            ((success_count++))
+        else
+            ((fail_count++))
+            failed_packages+=("$package_name")
+        fi
+    done
+
+    log "SUMMARY" "Package download results:"
+    log "SUMMARY" "  Successfully downloaded: ${success_count}/${total_packages}"
+    if [[ $fail_count -gt 0 ]]; then
+        log "WARNING" "  Failed to download: ${fail_count} packages"
+        log "WARNING" "  Failed packages: ${failed_packages[*]}"
+        return 1
+    fi
+
+    return 0
+}
+
+# Main execution function
 main() {
     local rc=0
-    
+
+    initialize_repositories
+    declare_packages
+
     # Download Custom packages
     log "INFO" "Downloading Custom packages..."
-    download_packages packages_custom || rc=1
-    
-    if [ $rc -eq 0 ]; then
-        log "SUCCESS" "Package download and verification completed successfully"
-    else
-        error_msg "Package download or verification failed"
+    if ! download_packages packages_custom; then
+        rc=1
     fi
-    
+
+    if [[ $rc -eq 0 ]]; then
+        log "SUCCESS" "All packages downloaded and verified successfully"
+    else
+        error_msg "Some packages failed to download or verify"
+    fi
+
     return $rc
 }
 
 # Run main function if script is not sourced
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main "$@"
+    exit $?
 fi
