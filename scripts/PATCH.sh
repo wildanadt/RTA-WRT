@@ -13,7 +13,7 @@ init_environment() {
     log "INFO" "Starting Builder Patch Process"
     log "DEBUG" "Current working directory: ${PWD}"
     
-    local target_dir="${GITHUB_WORKSPACE}/${WORKING_DIR}"
+    local target_dir="$GITHUB_WORKSPACE/$WORKING_DIR"
     if ! cd "${target_dir}"; then
         error_msg "Failed to change directory to ${target_dir}"
         exit 1
