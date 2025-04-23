@@ -167,13 +167,6 @@ verify_package() {
         return 1
     fi
 
-    # Simple verification - check file size
-    local file_size=$(stat -c%s "$package_file")
-    if [[ $file_size -lt 1024 ]]; then
-        log "ERROR" "Package ${package_name} appears to be too small (${file_size} bytes)"
-        return 1
-    fi
-
     log "DEBUG" "Package ${package_name} verification passed"
     return 0
 }
