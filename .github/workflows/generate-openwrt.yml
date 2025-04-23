@@ -98,6 +98,7 @@ env:
 
 jobs:
   prebuild:
+    continue-on-error: false
     runs-on: ubuntu-22.04
     name: ${{ github.event.inputs.release_branch }}
     outputs:
@@ -245,7 +246,7 @@ jobs:
     name: Build ${{ matrix.target }} Firmware
     needs: prebuild
     runs-on: ubuntu-22.04
-    continue-on-error: true
+    continue-on-error: false
     env:
       BASE: ${{ needs.prebuild.outputs.base }}
       BRANCH: ${{ needs.prebuild.outputs.branch }}
