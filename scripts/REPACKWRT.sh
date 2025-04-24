@@ -290,4 +290,4 @@ if [[ ${#} -lt 4 ]]; then
 fi
 
 # Execute the function with all passed arguments
-repackwrt "$@"
+repackwrt --"$1" -t "$2" -k "$3" -tn "$4"
