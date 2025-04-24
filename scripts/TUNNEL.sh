@@ -6,6 +6,10 @@ if [[ ! -f "./scripts/INCLUDE.sh" ]]; then
     exit 1
 fi
 
+set -o errexit  # Exit on error
+set -o nounset  # Exit on unset variables
+set -o pipefail # Exit if any command in a pipe fails
+
 . ./scripts/INCLUDE.sh
 
 # Constants

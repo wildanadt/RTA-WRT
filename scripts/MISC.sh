@@ -1,12 +1,14 @@
 #!/bin/bash
 
-set -euo pipefail
-
 # Source the include file containing common functions and variables
 if [[ ! -f "./scripts/INCLUDE.sh" ]]; then
     echo "ERROR: INCLUDE.sh not found in ./scripts/" >&2
     exit 1
 fi
+
+set -o errexit  # Exit on error
+set -o nounset  # Exit on unset variables
+set -o pipefail # Exit if any command in a pipe fails
 
 . ./scripts/INCLUDE.sh
 
