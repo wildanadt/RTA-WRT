@@ -658,11 +658,13 @@ jobs:
           if [ "$FOR" = "main" ]; then
               message="━━━━━━━━━━━━━━━━━━━━━━
           🎯 *RTA-WRT Firmware Update*
-          ✅ *Stable Release*
+          ✅ _Stable Release_
+
           🔹 *Build:* ${BUILD}
           🔹 *Version:* ${SOURCE}:${VERSION}
           🔹 *Date:* $(date '+%d-%m-%Y %H:%M:%S')
           🔹 *Build Type:* ${BUILD_TYPE}
+
           📌 *Release Notes:*
           • Stable version release
           • Recommended for all users
@@ -671,11 +673,13 @@ jobs:
           else
               message="━━━━━━━━━━━━━━━━━━━━━━
           🚀 *RTA-WRT Firmware Update*
-          🌟 *Development Release*
+          🌟 _Development Release_
+
           🔹 *Build:* ${BUILD}
           🔹 *Version:* ${SOURCE}:${VERSION}
           🔹 *Date:* $(date '+%d-%m-%Y %H:%M:%S')
           🔹 *Build Type:* ${BUILD_TYPE}
+
           📌 *Development Notes:*
           • Suitable for testing
           • Please provide feedback
@@ -684,45 +688,135 @@ jobs:
           ━━━━━━━━━━━━━━━━━━━━━━"
           fi
 
-          # Initialize buttons as empty array
-          BUTTONS='[]'
+          # Collect all buttons into an array
+          declare -a ALL_BUTTONS
+          button_count=0
 
-          # Check if combined_artifacts.txt exists and is not empty
-          # if [ -s combined_artifacts.txt ]; then
-          #     while IFS='|' read -r target_name file_url || [[ -n "$target_name" ]]; do
-          #         target_name=$(echo "$target_name" | xargs)
-          #         file_url=$(echo "$file_url" | xargs)
-          #         if [[ -n "$target_name" && -n "$file_url" ]]; then
-          #             echo "Adding button: $target_name -> $file_url"
-          #             BUTTONS=$(echo "$BUTTONS" | jq --arg name "$target_name" --arg url "$file_url" \
-          #                 '. += [[{"text": "📥 \($name)", "url": $url}]]')
-          #         fi
-          #     done < combined_artifacts.txt
-          # else
-          #     echo "No artifacts found or file is empty"
-          # fi
+          while IFS='|' read -r target_name file_url || [[ -n "$target_name" ]]; do
+              target_name=$(echo "$target_name" | xargs)
+              file_url=$(echo "$file_url" | xargs)
+
+              if [[ -n "$target_name" && -n "$file_url" ]]; then
+                  ALL_BUTTONS+=("$target_name" "$file_url")
+                  ((button_count++))
+              fi
+          done < combined_artifacts.txt
 
           # Add a button to view the release
-          if [ -n "$RELEASE_TAG" ]; then
-              VIEW_URL="https://github.com/rizkikotet-dev/RTA-WRT/releases/tag/${RELEASE_TAG}"
-              BUTTONS=$(echo "$BUTTONS" | jq --arg url "$VIEW_URL" \
-                  '. += [[{"text": "🔗 View Release", "url": $url}]]')
-          fi
+          ALL_BUTTONS+=("View Release" "https://github.com/rizkikotet-dev/RTA-WRT/releases/tag/$RELEASE_TAG")
+          ((button_count++))
 
-          # Send message with photo
-          RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto" \
-              -d "chat_id=${CHAT_ID}" \
-              -d "photo=${image_url}" \
-              -d "caption=${message}" \
-              -d "parse_mode=Markdown" \
-              -d "message_thread_id=${THREAD_ID}" \
-              -d "reply_markup={\"inline_keyboard\":$BUTTONS}")
+          echo "Total buttons: $button_count"
+
+          # Send the initial message with photo
+          echo "Sending main message with photo..."
+          response=$(curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto" \
+              --data-urlencode "chat_id=${CHAT_ID}" \
+              --data-urlencode "message_thread_id=${THREAD_ID}" \
+              --data-urlencode "photo=${image_url}" \
+              --data-urlencode "caption=${message}" \
+              --data-urlencode "parse_mode=Markdown")
 
           # Check if the message was sent successfully
-          if echo "$RESPONSE" | jq -e '.ok == true' > /dev/null; then
-              echo "Telegram notification sent successfully!"
-          else
-              echo "Failed to send Telegram notification:"
-              echo "$RESPONSE" | jq '.'
+          if [[ $(echo "$response" | jq -r '.ok') != "true" ]]; then
+              echo "Failed to send initial message: $(echo "$response" | jq -r '.description')"
               exit 1
           fi
+
+          # Get the message ID of the sent message
+          message_id=$(echo "$response" | jq -r '.result.message_id')
+          echo "Main message sent successfully with ID: $message_id"
+
+          # Function to send buttons in batches with retry mechanism
+          send_buttons_batch() {
+              local start=$1
+              local end=$2
+              local batch_num=$3
+              local max_retries=3
+              local retry_delay=2
+              local buttons_json='[]'
+              
+              for ((i=start; i<end; i+=2)); do
+                  if [[ $i -ge ${#ALL_BUTTONS[@]} ]]; then
+                      break
+                  fi
+                  
+                  local name="${ALL_BUTTONS[i]}"
+                  local url="${ALL_BUTTONS[i+1]}"
+                  
+                  # For View Release button, add a special emoji
+                  if [[ "$name" == "View Release" ]]; then
+                      name="🔗 View Release"
+                  else
+                      name="📥 $name"
+                  fi
+                  
+                  buttons_json=$(echo "$buttons_json" | jq --arg name "$name" --arg url "$url" \
+                      '. += [[{"text": $name, "url": $url}]]')
+              done
+              
+              # Debug message
+              echo "Preparing buttons batch ${batch_num}: ${start}-${end}"
+              
+              # Send the buttons with retry
+              local attempts=0
+              local success=false
+              
+              while [[ $attempts -lt $max_retries && $success == false ]]; do
+                  ((attempts++))
+                  echo "Sending batch ${batch_num}, attempt ${attempts}..."
+                  
+                  local batch_response=$(curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+                      --data-urlencode "chat_id=${CHAT_ID}" \
+                      --data-urlencode "message_thread_id=${THREAD_ID}" \
+                      --data-urlencode "text=📦 *Download Options (Group ${batch_num})*" \
+                      --data-urlencode "parse_mode=Markdown" \
+                      --data-urlencode "reply_to_message_id=${message_id}" \
+                      --data-urlencode "reply_markup={\"inline_keyboard\":$(echo "$buttons_json" | jq -c)}")
+                  
+                  # Check if successful
+                  if [[ $(echo "$batch_response" | jq -r '.ok') == "true" ]]; then
+                      echo "Batch ${batch_num} sent successfully!"
+                      success=true
+                  else
+                      local error_desc=$(echo "$batch_response" | jq -r '.description')
+                      echo "Failed to send batch ${batch_num}: ${error_desc}"
+                      
+                      if [[ $attempts -lt $max_retries ]]; then
+                          echo "Retrying in ${retry_delay} seconds..."
+                          sleep $retry_delay
+                          # Increase delay for next retry
+                          retry_delay=$((retry_delay * 2))
+                      fi
+                  fi
+              done
+              
+              if [[ $success == false ]]; then
+                  echo "Failed to send batch ${batch_num} after ${max_retries} attempts."
+              fi
+              
+              # Add delay between batches to avoid rate limiting
+              sleep 1
+          }
+
+          # Calculate how many button groups we need (20 buttons per message)
+          # Each button takes 2 elements in the array (name and URL)
+          total_elements=${#ALL_BUTTONS[@]}
+          max_buttons_per_batch=40  # 20 buttons = 40 elements in array
+          batch_count=$(( (total_elements + max_buttons_per_batch - 1) / max_buttons_per_batch ))
+
+          echo "Will send buttons in ${batch_count} batches"
+
+          # Send buttons in batches of 20
+          batch_num=1
+          for ((i=0; i<total_elements; i+=max_buttons_per_batch)); do
+              end=$((i + max_buttons_per_batch))
+              if ((end > total_elements)); then
+                  end=$total_elements
+              fi
+              
+              send_buttons_batch $i $end $batch_num
+              ((batch_num++))
+          done
+
+          echo "All button batches processed!"
