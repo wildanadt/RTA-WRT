@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+ls -l
+
 BOT_TOKEN="${BOT_TOKEN}"
 CHAT_ID="${CHAT_ID}"
 THREAD_ID="734"
