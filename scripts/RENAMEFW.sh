@@ -34,11 +34,8 @@ rename_firmware() {
     # Release URL for linking
     local RELEASE_URL="https://github.com/rizkikotet-dev/RTA-WRT/releases/download/${RELEASE_TAG}"
     
-    # Define pattern groups for better organization
-    declare -A pattern_groups
-    
     # Broadcom/Raspberry Pi patterns
-    pattern_groups["raspberry_pi"]=(
+    raspberry_pi_patterns=(
         "-bcm27xx-bcm2710-rpi-3-ext4-factory|Broadcom_RaspberryPi_3B-Ext4_Factory"
         "-bcm27xx-bcm2710-rpi-3-ext4-sysupgrade|Broadcom_RaspberryPi_3B-Ext4_Sysupgrade"
         "-bcm27xx-bcm2710-rpi-3-squashfs-factory|Broadcom_RaspberryPi_3B-Squashfs_Factory"
@@ -50,7 +47,7 @@ rename_firmware() {
     )
     
     # Allwinner patterns
-    pattern_groups["allwinner"]=(
+    allwinner_patterns=(
         "-h5-orangepi-pc2-|Allwinner_OrangePi_PC2"
         "-h5-orangepi-prime-|Allwinner_OrangePi_Prime"
         "-h5-orangepi-zeroplus-|Allwinner_OrangePi_ZeroPlus"
@@ -65,14 +62,14 @@ rename_firmware() {
     )
     
     # Rockchip patterns
-    pattern_groups["rockchip"]=(
+    rockchip_patterns=(
         "-rk3566-orangepi-3b-|Rockchip_OrangePi_3B"
         "-rk3588s-orangepi-5-|Rockchip_OrangePi_5"
         "_rk3318-box_|Rockchip_rk3318_H96-MAX"
     )
     
     # Amlogic patterns
-    pattern_groups["amlogic"]=(
+    amlogic_patterns=(
         "-s905x-|Amlogic_s905x"
         "-s905x2-|Amlogic_s905x2"
         "-s905x3-|Amlogic_s905x3"
@@ -105,7 +102,7 @@ rename_firmware() {
     )
     
     # x86_64 patterns
-    pattern_groups["x86_64"]=(
+    x86_64_patterns=(
         "x86-64-generic-ext4-combined-efi|X86_64_Generic_Ext4_Combined_EFI"
         "x86-64-generic-ext4-combined|X86_64_Generic_Ext4_Combined"
         "x86-64-generic-ext4-rootfs|X86_64_Generic_Ext4_Rootfs"
@@ -120,8 +117,6 @@ rename_firmware() {
         local file="$1"
         local search="$2"
         local replace="$3"
-        local extension="${file##*.}"
-        local filebase="${file%.*}"
         
         # For img.gz files
         if [[ "$file" == *".img.gz" ]]; then
@@ -162,22 +157,68 @@ rename_firmware() {
     
     echo -e "${INFO} Starting firmware renaming process by platform group..."
     
-    for group_name in "${!pattern_groups[@]}"; do
-        echo -e "${INFO} Processing ${group_name} files..."
-        local patterns=("${pattern_groups[$group_name][@]}")
+    # Process Raspberry Pi files
+    echo -e "${INFO} Processing Raspberry Pi files..."
+    for pattern in "${raspberry_pi_patterns[@]}"; do
+        local search="${pattern%%|*}"
+        local replace="${pattern##*|}"
+
+        for file in *"${search}"*.img.gz *"${search}"*.tar.gz; do
+            [[ -f "$file" ]] || continue
+            ((total_files++))
+            process_file "$file" "$search" "$replace" && ((renamed_files++))
+        done
+    done
+    
+    # Process Allwinner files
+    echo -e "${INFO} Processing Allwinner files..."
+    for pattern in "${allwinner_patterns[@]}"; do
+        local search="${pattern%%|*}"
+        local replace="${pattern##*|}"
         
-        for pattern in "${patterns[@]}"; do
-            local search="${pattern%%|*}"
-            local replace="${pattern##*|}"
-            
-            # Find files matching the search pattern
-            for file in *"${search}"*.{img.gz,tar.gz}; do
-                # Skip if no matches found (to avoid processing "*search*.img.gz")
-                [[ -f "$file" ]] || continue
-                
-                ((total_files++))
-                process_file "$file" "$search" "$replace" && ((renamed_files++))
-            done
+        for file in *"${search}"*.img.gz *"${search}"*.tar.gz; do
+            [[ -f "$file" ]] || continue
+            ((total_files++))
+            process_file "$file" "$search" "$replace" && ((renamed_files++))
+        done
+    done
+    
+    # Process Rockchip files
+    echo -e "${INFO} Processing Rockchip files..."
+    for pattern in "${rockchip_patterns[@]}"; do
+        local search="${pattern%%|*}"
+        local replace="${pattern##*|}"
+        
+        for file in *"${search}"*.img.gz *"${search}"*.tar.gz; do
+            [[ -f "$file" ]] || continue
+            ((total_files++))
+            process_file "$file" "$search" "$replace" && ((renamed_files++))
+        done
+    done
+    
+    # Process Amlogic files
+    echo -e "${INFO} Processing Amlogic files..."
+    for pattern in "${amlogic_patterns[@]}"; do
+        local search="${pattern%%|*}"
+        local replace="${pattern##*|}"
+        
+        for file in *"${search}"*.img.gz *"${search}"*.tar.gz; do
+            [[ -f "$file" ]] || continue
+            ((total_files++))
+            process_file "$file" "$search" "$replace" && ((renamed_files++))
+        done
+    done
+    
+    # Process x86_64 files
+    echo -e "${INFO} Processing x86_64 files..."
+    for pattern in "${x86_64_patterns[@]}"; do
+        local search="${pattern%%|*}"
+        local replace="${pattern##*|}"
+        
+        for file in *"${search}"*.img.gz *"${search}"*.tar.gz; do
+            [[ -f "$file" ]] || continue
+            ((total_files++))
+            process_file "$file" "$search" "$replace" && ((renamed_files++))
         done
     done
 
