@@ -57,7 +57,9 @@ rename_firmware() {
         "-rk3588s-orangepi-5-|Rockchip_OrangePi_5"
         
         # Amlogic
-        "-s905x-|Amlogic_s905x"
+        "_amlogic_s905x_|Amlogic_s905x-HG680P-NONMOD"
+        "_amlogic_s905x-b860h_|Amlogic_s905x-B860H_v1-v2-NONMOD"
+        "-armsr-armv8-s905x-|Amlogic_s905x-NONMOD"
         "-s905x2-|Amlogic_s905x2"
         "-s905x3-|Amlogic_s905x3"
         "-s905x4-|Amlogic_s905x4"
