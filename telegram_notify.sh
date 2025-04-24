@@ -6,7 +6,6 @@ CHAT_ID="${CHAT_ID}"
 THREAD_ID="734"
 
 # Build parameters
-BUILD="${BUILD}"
 SOURCE="${SOURCE}"
 VERSION="${VERSION}"
 BUILD_TYPE="${BUILD_TYPE}"
@@ -26,7 +25,6 @@ if [ "$FOR" = "main" ]; then
 🎯 *RTA-WRT Firmware Update*
 ✅ _Stable Release_
 
-🔹 *Build:* ${BUILD}
 🔹 *Version:* ${SOURCE}:${VERSION}
 🔹 *Date:* $(date '+%d-%m-%Y %H:%M:%S')
 🔹 *Build Type:* ${BUILD_TYPE}
@@ -41,7 +39,6 @@ else
 🚀 *RTA-WRT Firmware Update*
 🌟 _Development Release_
 
-🔹 *Build:* ${BUILD}
 🔹 *Version:* ${SOURCE}:${VERSION}
 🔹 *Date:* $(date '+%d-%m-%Y %H:%M:%S')
 🔹 *Build Type:* ${BUILD_TYPE}

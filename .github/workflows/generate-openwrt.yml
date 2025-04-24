@@ -653,7 +653,6 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
-          BUILD: ${{ needs.prebuild.outputs.type }}
           SOURCE: ${{ needs.prebuild.outputs.base }}
           VERSION: ${{ needs.prebuild.outputs.branch }}
           BUILD_TYPE: ${{ env.TUNNEL }}
