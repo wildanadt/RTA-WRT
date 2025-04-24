@@ -16,7 +16,7 @@ repackwrt() {
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --ophub|--ulo)
+            --ophub|--OPHUB|--ulo|--ULO)
                 builder_type="${1,,}"  # Convert to lowercase
                 shift
                 ;;
