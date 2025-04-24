@@ -107,7 +107,6 @@ build_mod_sdcard() {
 
     # Compress dan rename
     gzip "$file_name" || return 1
-    [[ -f "../$file_name.gz" ]] && rm -f "../$file_name.gz"
 
     local kernel
     kernel=$(grep -oP 'k[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9-]+)?' <<<"$file_name")

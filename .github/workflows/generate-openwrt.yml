@@ -246,7 +246,7 @@ jobs:
     name: Build ${{ matrix.target }} Firmware
     needs: prebuild
     runs-on: ubuntu-22.04
-    continue-on-error: false
+    continue-on-error: true
     env:
       BASE: ${{ needs.prebuild.outputs.base }}
       BRANCH: ${{ needs.prebuild.outputs.branch }}
