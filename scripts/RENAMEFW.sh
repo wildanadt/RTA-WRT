@@ -19,35 +19,27 @@ rename_firmware() {
     local firmware_dir="$GITHUB_WORKSPACE/$WORKING_DIR/compiled_images"
     if [[ ! -d "$firmware_dir" ]]; then
         error_msg "Invalid firmware directory: ${firmware_dir}"
-        return 1
     fi
 
-    # Move to firmware directory
-    cd "${firmware_dir}" || {
-        error_msg "Failed to change directory to ${firmware_dir}"
-        return 1
-    }
+    # Change to firmware directory
+    cd "${firmware_dir}" || error_msg "Failed to change directory to ${firmware_dir}"
 
-    # Create artifacts.txt if it doesn't exist
-    > artifacts.txt
+    # Search and replace patterns
+    local search_replace_patterns=(
+        # Format: "search|replace"
 
-    # Release URL for linking
-    local RELEASE_URL="https://github.com/rizkikotet-dev/RTA-WRT/releases/download/${RELEASE_TAG}"
-    
-    # Broadcom/Raspberry Pi patterns
-    raspberry_pi_patterns=(
+        # bcm27xx
         "-bcm27xx-bcm2710-rpi-3-ext4-factory|Broadcom_RaspberryPi_3B-Ext4_Factory"
         "-bcm27xx-bcm2710-rpi-3-ext4-sysupgrade|Broadcom_RaspberryPi_3B-Ext4_Sysupgrade"
         "-bcm27xx-bcm2710-rpi-3-squashfs-factory|Broadcom_RaspberryPi_3B-Squashfs_Factory"
         "-bcm27xx-bcm2710-rpi-3-squashfs-sysupgrade|Broadcom_RaspberryPi_3B-Squashfs_Sysupgrade"
+
         "-bcm27xx-bcm2711-rpi-4-ext4-factory|Broadcom_RaspberryPi_4B-Ext4_Factory"
         "-bcm27xx-bcm2711-rpi-4-ext4-sysupgrade|Broadcom_RaspberryPi_4B-Ext4_Sysupgrade"
         "-bcm27xx-bcm2711-rpi-4-squashfs-factory|Broadcom_RaspberryPi_4B-Squashfs_Factory"
         "-bcm27xx-bcm2711-rpi-4-squashfs-sysupgrade|Broadcom_RaspberryPi_4B-Squashfs_Sysupgrade"
-    )
-    
-    # Allwinner patterns
-    allwinner_patterns=(
+        
+        # Allwinner
         "-h5-orangepi-pc2-|Allwinner_OrangePi_PC2"
         "-h5-orangepi-prime-|Allwinner_OrangePi_Prime"
         "-h5-orangepi-zeroplus-|Allwinner_OrangePi_ZeroPlus"
@@ -59,21 +51,17 @@ rename_firmware() {
         "-h616-orangepi-zero2-|Allwinner_OrangePi_Zero2"
         "-h618-orangepi-zero2w-|Allwinner_OrangePi_Zero2W"
         "-h618-orangepi-zero3-|Allwinner_OrangePi_Zero3"
-    )
-    
-    # Rockchip patterns
-    rockchip_patterns=(
+        
+        # Rockchip
         "-rk3566-orangepi-3b-|Rockchip_OrangePi_3B"
         "-rk3588s-orangepi-5-|Rockchip_OrangePi_5"
-        "_rk3318-box_|Rockchip_rk3318_H96-MAX"
-    )
-    
-    # Amlogic patterns
-    amlogic_patterns=(
+        
+        # Amlogic
         "-s905x-|Amlogic_s905x"
         "-s905x2-|Amlogic_s905x2"
         "-s905x3-|Amlogic_s905x3"
         "-s905x4-|Amlogic_s905x4"
+
         "_amlogic_s912_|Amlogic_s912"
         "_amlogic_s905x2_|Amlogic_s905x2"
         "_amlogic_s905x3_|Amlogic_s905x3"
@@ -97,12 +85,9 @@ rename_firmware() {
         "_s912-x92_|Amlogic_s912-X92"
         "_s905x_|Amlogic_s905x-HG680P"
         "_s905x-b860h_|Amlogic_s905x-B860H_v1-v2"
-        "Amlogic_s905x-Mod_SDCard-HG680P|Amlogic_s905x-Mod_SDCard-HG680P"
-        "Amlogic_s905x-Mod_SDCard-B860H_v1-v2|Amlogic_s905x-Mod_SDCard-B860H_v1-v2"
-    )
-    
-    # x86_64 patterns
-    x86_64_patterns=(
+        "_rk3318-box_|Rockchip_rk3318_H96-MAX"
+
+        # x86_64
         "x86-64-generic-ext4-combined-efi|X86_64_Generic_Ext4_Combined_EFI"
         "x86-64-generic-ext4-combined|X86_64_Generic_Ext4_Combined"
         "x86-64-generic-ext4-rootfs|X86_64_Generic_Ext4_Rootfs"
@@ -110,130 +95,42 @@ rename_firmware() {
         "x86-64-generic-squashfs-combined|X86_64_Generic_Squashfs_Combined"
         "x86-64-generic-squashfs-rootfs|X86_64_Generic_Squashfs_Rootfs"
         "x86-64-generic-rootfs|X86_64_Generic_Rootfs"
+
+
+        "Amlogic_s905x-Mod_SDCard-HG680P|Amlogic_s905x-Mod_SDCard-HG680P"
+        "Amlogic_s905x-Mod_SDCard-B860H_v1-v2|Amlogic_s905x-Mod_SDCard-B860H_v1-v2"
     )
 
-    # Function to process a single file
-    process_file() {
-        local file="$1"
-        local search="$2"
-        local replace="$3"
-        
-        # For img.gz files
-        if [[ "$file" == *".img.gz" ]]; then
+    RELEASE_URL="https://github.com/rizkikotet-dev/RTA-WRT/releases/download/${RELEASE_TAG}"
+
+    for pattern in "${search_replace_patterns[@]}"; do
+        local search="${pattern%%|*}"
+        local replace="${pattern##*|}"
+
+        # Process .img.gz files
+        for file in *"${search}"*.img.gz; do
+            [[ -f "$file" ]] || continue
             local kernel=""
             if [[ "$file" =~ k[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9-]+)? ]]; then
                 kernel="${BASH_REMATCH[0]}"
             fi
-            
-            local new_name
-            if [[ -n "$kernel" ]]; then
-                new_name="RTA-WRT-${OP_BASE}-${BRANCH}-${replace}-${kernel}-${TUNNEL}.img.gz"
-                echo "${replace}-${kernel}-${TUNNEL}|${RELEASE_URL}/${new_name}" >> artifacts.txt
-            else
-                new_name="RTA-WRT-${OP_BASE}-${BRANCH}-${replace}-${TUNNEL}.img.gz"
-                echo "${replace}-${TUNNEL}|${RELEASE_URL}/${new_name}" >> artifacts.txt
-            fi
-        # For tar.gz files
-        elif [[ "$file" == *".tar.gz" ]]; then
+            local new_name="RTA-WRT-${OP_BASE}-${BRANCH}-${replace}-${kernel:-}${TUNNEL}.img.gz"
+            echo "${replace}-${kernel:-}${TUNNEL}|${RELEASE_URL}/${new_name}" >> artifacts.txt
+            echo -e "${INFO} Renaming: $file → $new_name"
+            mv "$file" "$new_name" || echo -e "${WARNING} Failed to rename $file"
+        done
+
+        # Process .tar.gz files
+        for file in *"${search}"*.tar.gz; do
+            [[ -f "$file" ]] || continue
             local new_name="RTA-WRT-${OP_BASE}-${BRANCH}-${replace}-${TUNNEL}.tar.gz"
-        else
-            # Skip unknown file types
-            echo -e "${WARNING} Unknown file type: $file (skipping)"
-            return 0
-        fi
-
-        echo -e "${INFO} Renaming: $file → $new_name"
-        mv "$file" "$new_name" || {
-            echo -e "${WARNING} Failed to rename $file"
-            return 1
-        }
-        
-        return 0
-    }
-
-    # Process files for each pattern group
-    local total_files=0
-    local renamed_files=0
-    
-    echo -e "${INFO} Starting firmware renaming process by platform group..."
-    
-    # Process Raspberry Pi files
-    echo -e "${INFO} Processing Raspberry Pi files..."
-    for pattern in "${raspberry_pi_patterns[@]}"; do
-        local search="${pattern%%|*}"
-        local replace="${pattern##*|}"
-
-        for file in *"${search}"*.img.gz *"${search}"*.tar.gz; do
-            [[ -f "$file" ]] || continue
-            ((total_files++))
-            process_file "$file" "$search" "$replace" && ((renamed_files++))
-        done
-    done
-    
-    # Process Allwinner files
-    echo -e "${INFO} Processing Allwinner files..."
-    for pattern in "${allwinner_patterns[@]}"; do
-        local search="${pattern%%|*}"
-        local replace="${pattern##*|}"
-        
-        for file in *"${search}"*.img.gz *"${search}"*.tar.gz; do
-            [[ -f "$file" ]] || continue
-            ((total_files++))
-            process_file "$file" "$search" "$replace" && ((renamed_files++))
-        done
-    done
-    
-    # Process Rockchip files
-    echo -e "${INFO} Processing Rockchip files..."
-    for pattern in "${rockchip_patterns[@]}"; do
-        local search="${pattern%%|*}"
-        local replace="${pattern##*|}"
-        
-        for file in *"${search}"*.img.gz *"${search}"*.tar.gz; do
-            [[ -f "$file" ]] || continue
-            ((total_files++))
-            process_file "$file" "$search" "$replace" && ((renamed_files++))
-        done
-    done
-    
-    # Process Amlogic files
-    echo -e "${INFO} Processing Amlogic files..."
-    for pattern in "${amlogic_patterns[@]}"; do
-        local search="${pattern%%|*}"
-        local replace="${pattern##*|}"
-        
-        for file in *"${search}"*.img.gz *"${search}"*.tar.gz; do
-            [[ -f "$file" ]] || continue
-            ((total_files++))
-            process_file "$file" "$search" "$replace" && ((renamed_files++))
-        done
-    done
-    
-    # Process x86_64 files
-    echo -e "${INFO} Processing x86_64 files..."
-    for pattern in "${x86_64_patterns[@]}"; do
-        local search="${pattern%%|*}"
-        local replace="${pattern##*|}"
-        
-        for file in *"${search}"*.img.gz *"${search}"*.tar.gz; do
-            [[ -f "$file" ]] || continue
-            ((total_files++))
-            process_file "$file" "$search" "$replace" && ((renamed_files++))
+            echo -e "${INFO} Renaming: $file → $new_name"
+            mv "$file" "$new_name" || echo -e "${WARNING} Failed to rename $file"
         done
     done
 
+    sync && sleep 3
     echo -e "${INFO} Rename operation completed."
-    echo -e "${INFO} Processed $total_files files, successfully renamed $renamed_files files."
-    
-    # Sort the artifacts file alphabetically for better readability
-    if [[ -f "artifacts.txt" ]]; then
-        sort -o artifacts.txt artifacts.txt
-        echo -e "${INFO} Created artifacts.txt with ${renamed_files} entries."
-    fi
-    
-    sync
-    return 0
 }
 
-# Execute the function
 rename_firmware
