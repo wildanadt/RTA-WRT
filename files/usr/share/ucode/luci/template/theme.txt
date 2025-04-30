@@ -1,4 +1,5 @@
-
+<script type='text/javascript' src='{{ resource }}/trbtn-overlay.min.js'></script>
+<script type='text/javascript' class='troverlay'>(function() {var trbtnId = trbtnOverlay.init('Dukung Saya di Trakteer','#03A9F4','https://trakteer.id/rizkikotet/tip/embed/modal','{{ resource }}/trbtn-icon.png','30','floating-right');trbtnOverlay.draw(trbtnId);})();</script>
 <script src="{{ resource }}/sweetalert2.all.min.js"></script>
 <style>
     .swal2-popup {

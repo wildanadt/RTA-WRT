@@ -11,7 +11,7 @@ on:
         options:
           - openwrt:24.10.1
           - openwrt:23.05.5
-          - immortalwrt:24.10.0
+          - immortalwrt:24.10.1
           - immortalwrt:23.05.4
       target:
         description: "Select device board"
@@ -98,6 +98,7 @@ env:
 
 jobs:
   prebuild:
+    continue-on-error: false
     runs-on: ubuntu-22.04
     name: ${{ github.event.inputs.release_branch }}
     outputs:
@@ -621,6 +622,11 @@ jobs:
     needs: [prebuild, build-firmware]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
       - name: Download file links as artifact
         uses: actions/download-artifact@v4
         with:
@@ -630,98 +636,25 @@ jobs:
         run: |
           mkdir -p artifacts
           find artifacts -name "artifacts.txt" -exec cat {} \; > combined_artifacts.txt
-          cat combined_artifacts.txt || echo "No artifacts found"
 
-      - name: Telegram Notification
+          # Check if combined_artifacts.txt exists and has content
+          if [ ! -s combined_artifacts.txt ]; then
+            echo "No artifacts found or empty artifacts file"
+            echo "::warning::No firmware artifacts were found to notify about"
+            exit 0
+          fi
+
+          cat combined_artifacts.txt
+
+      - name: Kirim Notifikasi Telegram
         run: |
-          BOT_TOKEN="${{ secrets.BOT_TOKEN }}"
-          CHAT_ID="${{ secrets.CHAT_ID }}"
-          THREAD_ID="734"
-
-          # Build parameters
-          BUILD="${{ needs.prebuild.outputs.type }}"
-          SOURCE="${{ needs.prebuild.outputs.base }}"
-          VERSION="${{ needs.prebuild.outputs.branch }}"
-          BUILD_TYPE="${{ env.TUNNEL }}"
-          FOR="${{ github.ref_name }}"
-          RELEASE_TAG="${{ needs.prebuild.outputs.release_tag }}"
-
-          # Set image URL based on source
-          if [ "$SOURCE" = "immortalwrt" ]; then
-              image_url="https://avatars.githubusercontent.com/u/53193414?s=200&v=4"
-          else
-              image_url="https://avatars.githubusercontent.com/u/2528830?s=200&v=4"
-          fi
-
-          # Generate message based on branch
-          if [ "$FOR" = "main" ]; then
-              message="━━━━━━━━━━━━━━━━━━━━━━
-          🎯 *RTA-WRT Firmware Update*
-          ✅ *Stable Release*
-          🔹 *Build:* ${BUILD}
-          🔹 *Version:* ${SOURCE}:${VERSION}
-          🔹 *Date:* $(date '+%d-%m-%Y %H:%M:%S')
-          🔹 *Build Type:* ${BUILD_TYPE}
-          📌 *Release Notes:*
-          • Stable version release
-          • Recommended for all users
-          • Includes latest features and bug fixes
-          ━━━━━━━━━━━━━━━━━━━━━━"
-          else
-              message="━━━━━━━━━━━━━━━━━━━━━━
-          🚀 *RTA-WRT Firmware Update*
-          🌟 *Development Release*
-          🔹 *Build:* ${BUILD}
-          🔹 *Version:* ${SOURCE}:${VERSION}
-          🔹 *Date:* $(date '+%d-%m-%Y %H:%M:%S')
-          🔹 *Build Type:* ${BUILD_TYPE}
-          📌 *Development Notes:*
-          • Suitable for testing
-          • Please provide feedback
-          • Report any bugs found
-          • Your feedback helps development
-          ━━━━━━━━━━━━━━━━━━━━━━"
-          fi
-
-          # Initialize buttons as empty array
-          BUTTONS='[]'
-
-          # Check if combined_artifacts.txt exists and is not empty
-          # if [ -s combined_artifacts.txt ]; then
-          #     while IFS='|' read -r target_name file_url || [[ -n "$target_name" ]]; do
-          #         target_name=$(echo "$target_name" | xargs)
-          #         file_url=$(echo "$file_url" | xargs)
-          #         if [[ -n "$target_name" && -n "$file_url" ]]; then
-          #             echo "Adding button: $target_name -> $file_url"
-          #             BUTTONS=$(echo "$BUTTONS" | jq --arg name "$target_name" --arg url "$file_url" \
-          #                 '. += [[{"text": "📥 \($name)", "url": $url}]]')
-          #         fi
-          #     done < combined_artifacts.txt
-          # else
-          #     echo "No artifacts found or file is empty"
-          # fi
-
-          # Add a button to view the release
-          if [ -n "$RELEASE_TAG" ]; then
-              VIEW_URL="https://github.com/rizkikotet-dev/RTA-WRT/releases/tag/${RELEASE_TAG}"
-              BUTTONS=$(echo "$BUTTONS" | jq --arg url "$VIEW_URL" \
-                  '. += [[{"text": "🔗 View Release", "url": $url}]]')
-          fi
-
-          # Send message with photo
-          RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto" \
-              -d "chat_id=${CHAT_ID}" \
-              -d "photo=${image_url}" \
-              -d "caption=${message}" \
-              -d "parse_mode=Markdown" \
-              -d "message_thread_id=${THREAD_ID}" \
-              -d "reply_markup={\"inline_keyboard\":$BUTTONS}")
-
-          # Check if the message was sent successfully
-          if echo "$RESPONSE" | jq -e '.ok == true' > /dev/null; then
-              echo "Telegram notification sent successfully!"
-          else
-              echo "Failed to send Telegram notification:"
-              echo "$RESPONSE" | jq '.'
-              exit 1
-          fi
+          chmod +x ./telegram_notify.sh
+          ./telegram_notify.sh
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          SOURCE: ${{ needs.prebuild.outputs.base }}
+          VERSION: ${{ needs.prebuild.outputs.branch }}
+          BUILD_TYPE: ${{ env.TUNNEL }}
+          FOR: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ needs.prebuild.outputs.release_tag }}

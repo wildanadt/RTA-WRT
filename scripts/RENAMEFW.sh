@@ -1,22 +1,30 @@
 #!/bin/bash
 
+# Source the include file containing common functions and variables
+if [[ ! -f "./scripts/INCLUDE.sh" ]]; then
+    echo "ERROR: INCLUDE.sh not found in ./scripts/" >&2
+    exit 1
+fi
+
+set -o errexit  # Exit on error
+set -o nounset  # Exit on unset variables
+set -o pipefail # Exit if any command in a pipe fails
+
 . ./scripts/INCLUDE.sh
 
 rename_firmware() {
     echo -e "${STEPS} Renaming firmware files..."
 
-    # Validasi direktori firmware
+    # Validate firmware directory
     local firmware_dir="$GITHUB_WORKSPACE/$WORKING_DIR/compiled_images"
     if [[ ! -d "$firmware_dir" ]]; then
         error_msg "Invalid firmware directory: ${firmware_dir}"
     fi
 
-    # Pindah ke direktori firmware
-    cd "${firmware_dir}" || {
-       error_msg "Failed to change directory to ${firmware_dir}"
-    }
+    # Change to firmware directory
+    cd "${firmware_dir}" || error_msg "Failed to change directory to ${firmware_dir}"
 
-    # Pola pencarian dan penggantian
+    # Search and replace patterns
     local search_replace_patterns=(
         # Format: "search|replace"
 
@@ -49,7 +57,9 @@ rename_firmware() {
         "-rk3588s-orangepi-5-|Rockchip_OrangePi_5"
         
         # Amlogic
-        "-s905x-|Amlogic_s905x"
+        "_amlogic_s905x_|Amlogic_s905x-HG680P-NONMOD"
+        "_amlogic_s905x-b860h_|Amlogic_s905x-B860H_v1-v2-NONMOD"
+        "-armsr-armv8-s905x-|Amlogic_s905x-NONMOD"
         "-s905x2-|Amlogic_s905x2"
         "-s905x3-|Amlogic_s905x3"
         "-s905x4-|Amlogic_s905x4"
@@ -94,43 +104,30 @@ rename_firmware() {
     )
 
     RELEASE_URL="https://github.com/rizkikotet-dev/RTA-WRT/releases/download/${RELEASE_TAG}"
+
     for pattern in "${search_replace_patterns[@]}"; do
         local search="${pattern%%|*}"
         local replace="${pattern##*|}"
 
+        # Process .img.gz files
         for file in *"${search}"*.img.gz; do
-            if [[ -f "$file" ]]; then
-                local kernel=""
-                if [[ "$file" =~ k[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9-]+)? ]]; then
-                    kernel="${BASH_REMATCH[0]}"
-                fi
-                local new_name
-                if [[ -n "$kernel" ]]; then
-                    new_name="RTA-WRT-${OP_BASE}-${BRANCH}-${replace}-${kernel}-${TUNNEL}.img.gz"
-                    echo "${replace}-${kernel}-${TUNNEL}|${RELEASE_URL}/${new_name}" >> artifacts.txt
-                    ls -lh
-                else
-                    new_name="RTA-WRT-${OP_BASE}-${BRANCH}-${replace}-${TUNNEL}.img.gz"
-                    echo "${replace}-${TUNNEL}|${RELEASE_URL}/${new_name}" >> artifacts.txt
-                    ls -lh
-                fi
-                echo -e "${INFO} Renaming: $file → $new_name"
-                mv "$file" "$new_name" || {
-                    echo -e "${WARNING} Failed to rename $file"
-                    continue
-                }
+            [[ -f "$file" ]] || continue
+            local kernel=""
+            if [[ "$file" =~ k[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9-]+)? ]]; then
+                kernel="${BASH_REMATCH[0]}"
             fi
+            local new_name="RTA-WRT-${OP_BASE}-${BRANCH}-${replace}-${kernel}-${TUNNEL}.img.gz"
+            echo "${replace}-${kernel:-}${TUNNEL}|${RELEASE_URL}/${new_name}" >> artifacts.txt
+            echo -e "${INFO} Renaming: $file → $new_name"
+            mv "$file" "$new_name" || echo -e "${WARNING} Failed to rename $file"
         done
+
+        # Process .tar.gz files
         for file in *"${search}"*.tar.gz; do
-            if [[ -f "$file" ]]; then
-                local new_name
-                new_name="RTA-WRT-${OP_BASE}-${BRANCH}-${replace}-${TUNNEL}.tar.gz"
-                echo -e "${INFO} Renaming: $file → $new_name"
-                mv "$file" "$new_name" || {
-                    echo -e "${WARNING} Failed to rename $file"
-                    continue
-                }
-            fi
+            [[ -f "$file" ]] || continue
+            local new_name="RTA-WRT-${OP_BASE}-${BRANCH}-${replace}-${TUNNEL}.tar.gz"
+            echo -e "${INFO} Renaming: $file → $new_name"
+            mv "$file" "$new_name" || echo -e "${WARNING} Failed to rename $file"
         done
     done
 
