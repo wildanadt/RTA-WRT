@@ -828,6 +828,42 @@ setup_secondary_install() {
   fi
 }
 
+# Function to fix ModemManager issues
+fix_modemmanager() {
+  log "STEP" "Fixing ModemManager issues..."
+  
+  # Check if ModemManager is installed
+  if is_package_installed "ModemManager"; then
+    log "INFO" "ModemManager detected, disabling..."
+    
+    # Disable ModemManager service
+    if [ -f "/etc/init.d/ModemManager" ]; then
+      /etc/init.d/ModemManager disable
+      /etc/init.d/ModemManager stop
+      log "INFO" "Disabled ModemManager service"
+    fi
+
+    sleep 2
+
+    rm -f /var/run/dbus.pid 2>/dev/null
+    /etc/init.d/dbus restart 2>/dev/null
+    /etc/init.d/modemmanager restart 2>/dev/null
+
+    # Create Script Startup
+    if [ ! -f "/etc/uci-defaults/01-modemmanager.sh" ]; then
+      echo "#!/bin/sh" > /etc/uci-defaults/01-modemmanager.sh
+      echo "sleep 5" >> /etc/uci-defaults/01-modemmanager.sh
+      echo "rm -f /var/run/dbus.pid" >> /etc/uci-defaults/01-modemmanager.sh
+      echo "/etc/init.d/dbus restart" >> /etc/uci-defaults/01-modemmanager.sh
+      echo "/etc/init.d/modemmanager restart" >> /etc/uci-defaults/01-modemmanager.sh
+      chmod +x /etc/uci-defaults/01-modemmanager.sh
+      log "INFO" "Created ModemManager startup script"
+    fi
+  else
+    log "INFO" "ModemManager not installed, skipping"
+  fi
+}
+
 # Function to complete setup and perform final tasks
 complete_setup() {
   log "STEP" "==================== CONFIGURATION COMPLETE ===================="
@@ -900,6 +936,7 @@ main() {
   setup_tinyfm
   restore_sysinfo
   setup_secondary_install
+  fix_modemmanager
   complete_setup
 }
 

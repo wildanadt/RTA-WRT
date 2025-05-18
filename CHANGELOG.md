@@ -1,5 +1,9 @@
 # What's New!
 
+**Changelog Firmware** (19-05-2025)
+
+- fix: add modemmanager fix function and related scripts
+
 **Changelog Firmware** (14-05-2025)
 
 - Fix Boot Amlogic HG680P
