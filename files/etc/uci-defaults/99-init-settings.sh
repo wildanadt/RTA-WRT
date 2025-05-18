@@ -833,13 +833,13 @@ fix_modemmanager() {
   log "STEP" "Fixing ModemManager issues..."
   
   # Check if ModemManager is installed
-  if is_package_installed "ModemManager"; then
+  if is_package_installed "modemmanager"; then
     log "INFO" "ModemManager detected, disabling..."
     
     # Disable ModemManager service
-    if [ -f "/etc/init.d/ModemManager" ]; then
-      /etc/init.d/ModemManager disable
-      /etc/init.d/ModemManager stop
+    if [ -f "/etc/init.d/modemmanager" ]; then
+      /etc/init.d/modemmanager disable
+      /etc/init.d/modemmanager stop
       log "INFO" "Disabled ModemManager service"
     fi
 
