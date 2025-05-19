@@ -830,7 +830,14 @@ setup_secondary_install() {
 
 # Function to fix ModemManager issues
 fix_modemmanager() {
-  log "STEP" "Fixing ModemManager issues..."
+  log "STEP" "Fixing ModemManager issues For OpenWrt 24.10..."
+
+  if $(grep -q "24.10" /etc/openwrt_release); then
+    log "INFO" "ModemManager fix for OpenWrt 24.10 detected"
+  else
+    log "INFO" "No ModemManager fix needed for this version"
+    return
+  fi
   
   # Check if ModemManager is installed
   if is_package_installed "modemmanager"; then
