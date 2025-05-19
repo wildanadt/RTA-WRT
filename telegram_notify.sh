@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 # Set strict error handling
-set -euo pipefail
 IFS=$'\n\t'
 
 # Script configuration - Environment variables
