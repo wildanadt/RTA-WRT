@@ -1,5 +1,6 @@
 test.sh
 combined_artifacts.txt
+firmware.html
 bot.log
 bot_config.json
 bot_session.session
