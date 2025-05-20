@@ -79,12 +79,12 @@ on:
       clean:
         description: "Do 'make clean' for each run"
         required: false
-        default: "true"
+        default: true
         type: boolean
       notify:
         description: "Send notification to Telegram"
         required: false
-        default: "true"
+        default: true
         type: boolean
 
 env:
@@ -549,7 +549,7 @@ jobs:
                 fi
               done
           else
-              for file in bin/targets/"${{ env.TARGET_SYSTEM }}"/*.img.gz; do
+              for file in bin/targets/"${TARGET_SYSTEM}"/*.img.gz; do
                 if [ -f "$file" ]; then
                   new_name="RTA-WRT_$(basename "$file" .img.gz)_${{ env.TUNNEL }}.img.gz"
                   mv "$file" compiled_images/$new_name
@@ -653,8 +653,23 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
+          THREAD_ID: ${{ secrets.THREAD_ID }}
           SOURCE: ${{ needs.prebuild.outputs.base }}
           VERSION: ${{ needs.prebuild.outputs.branch }}
           BUILD_TYPE: ${{ env.TUNNEL }}
           FOR: ${{ github.ref_name }}
           RELEASE_TAG: ${{ needs.prebuild.outputs.release_tag }}
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+  
+      - name: Deploy to pages branch
+        run: |
+          git checkout --orphan pages
+          git rm -rf .
+          cp ../main/firmware.html index.html
+          git add index.html
+          git commit -m "Deploy firmware.html as index.html"
+          git push origin pages --force
