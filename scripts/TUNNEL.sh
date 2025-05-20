@@ -41,15 +41,22 @@ get_github_release_any() {
     head -n 1
 }
 
+# Function to get specific release tags from GitHub
+get_github_release_tags() {
+    local repo="$1"
+    local tags="$2"
+    local pattern="$3"
+    curl -s "${GH_API}/${repo}/releases/tags/${tags}" | \
+    grep "browser_download_url" | \
+    grep -oE "https.*${pattern}" | \
+    head -n 1
+}
+
 # Determine core file names
 determine_core_files() {
     # OpenClash core
-    if [[ "${ARCH_3}" == "x86_64" ]]; then
-        meta_file="mihomo-linux-${ARCH_1}-compatible"
-    else
-        meta_file="mihomo-linux-${ARCH_1}"
-    fi
-    openclash_core=$(get_github_release "MetaCubeX/mihomo" "${meta_file}-v[0-9]+\.[0-9]+\.[0-9]+\.gz")
+    occore_file="clash-linux-${ARCH_1}"
+    openclash_core=$(get_github_release_tags "vernesong/OpenClash" "mihomo" "${occore_file}.tar.gz")
 
     # PassWall core
     passwall_core_file_zip="passwall_packages_ipk_${ARCH_3}"
@@ -57,7 +64,8 @@ determine_core_files() {
 
     # Nikki core
     nikki_file_ipk="nikki_${ARCH_3}-openwrt-${VEROP}"
-    nikki_file_ipk_down=$(get_github_release_any "rizkikotet-dev/OpenWrt-nikki-Mod" "${nikki_file_ipk}.*.tar.gz")
+    # nikki_file_ipk_down=$(get_github_release_any "rizkikotet-dev/OpenWrt-nikki-Mod" "${nikki_file_ipk}.*.tar.gz")
+    nikki_file_ipk_down=$(get_github_release_any "nikkinikki-org/OpenWrt-nikki" "${nikki_file_ipk}.*.tar.gz")
 }
 
 # Function to download and extract package
@@ -89,8 +97,8 @@ setup_openclash() {
     download_packages openclash_ipk || return 1
     
     # Download and extract core
-    handle_package "${openclash_core}" "files/etc/openclash/core/clash_meta.gz" \
-        "gzip -d files/etc/openclash/core/clash_meta.gz" || return 1
+    handle_package "${openclash_core}" "files/etc/openclash/core/clash_meta.tar.gz" \
+        "tar -xvf files/etc/openclash/core/clash_meta.tar.gz -C files/etc/openclash/core && rm clash_meta.tar.gz" || return 1
     
     return 0
 }

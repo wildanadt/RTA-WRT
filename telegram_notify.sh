@@ -441,11 +441,11 @@ generate_firmware_html() {
             <i class="fa-solid fa-book"></i>
             <span>Documentation</span>
           </a>
-          <a href="#" class="nav-item text-slate-300 hover:text-white flex items-center space-x-1 py-1">
+          <a href="https://github.com/rizkikotet-dev/RTA-WRT" class="nav-item text-slate-300 hover:text-white flex items-center space-x-1 py-1">
             <i class="fa-solid fa-code-branch"></i>
             <span>GitHub</span>
           </a>
-          <a href="#" class="nav-item text-slate-300 hover:text-white flex items-center space-x-1 py-1">
+          <a href="https://t.me/backup_rtawrt" class="nav-item text-slate-300 hover:text-white flex items-center space-x-1 py-1">
             <i class="fa-solid fa-circle-question"></i>
             <span>Support</span>
           </a>
@@ -682,16 +682,13 @@ generate_firmware_html() {
           </div>
           
           <div class="flex space-x-6 mb-6 md:mb-0">
-            <a href="#" class="text-slate-400 hover:text-white transition-colors">
+            <a href="https://github.com/rizkikotet-dev" class="text-slate-400 hover:text-white transition-colors">
               <i class="fa-brands fa-github text-lg"></i>
             </a>
-            <a href="#" class="text-slate-400 hover:text-white transition-colors">
-              <i class="fa-brands fa-discord text-lg"></i>
-            </a>
-            <a href="#" class="text-slate-400 hover:text-white transition-colors">
+            <a href="https://t.me/rtawrt" class="text-slate-400 hover:text-white transition-colors">
               <i class="fa-brands fa-telegram text-lg"></i>
             </a>
-            <a href="#" class="text-slate-400 hover:text-white transition-colors">
+            <a href="https://t.me/backup_rtawrt" class="text-slate-400 hover:text-white transition-colors">
               <i class="fa-solid fa-circle-question text-lg"></i>
             </a>
           </div>
@@ -931,8 +928,6 @@ ${firmware_js_escaped}
                 <ul class="space-y-1 text-sm">
                   <li>• <strong>all-tunnel</strong>: Includes all tunneling protocols and VPN support</li>
                 </ul>
-                
-                <p class="mt-4 text-sm">For detailed installation instructions, please consult our comprehensive <a href="#" class="text-primary-400 hover:underline">installation guide</a>.</p>
               </div>
             \`,
             showCloseButton: true,

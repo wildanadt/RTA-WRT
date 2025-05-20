@@ -1,11 +1,13 @@
 # What's New!
 
-**Changelog Firmware** (20-05-2025)
+**Changelog Firmware** (21-05-2025)
 
 **Version: 24.10.1**
 - Fix WiFi stability issues on HG680P devices
 - Enhance Netmonitor with real-time bandwidth graphs
 - Fix ModemManager connectivity issues for USB modems
+- Change Core OpenClash To Official
+- Change Nikki To Official
 
 **Changelog Firmware** (19-05-2025)
 
