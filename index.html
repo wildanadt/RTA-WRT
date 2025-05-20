@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0F172A" />
+  <title>RTA-WRT Firmware Downloads</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              300: '#93c5fd',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+              950: '#172554',
+            },
+          },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-out forwards',
+            'fade-in-up': 'fadeInUp 0.6s ease-out forwards',
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'spin-slow': 'spin 2s linear infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            fadeInUp: {
+              '0%': { opacity: '0', transform: 'translateY(10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+          },
+          boxShadow: {
+            'glow': '0 0 15px rgba(59, 130, 246, 0.5)',
+            'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    /* Custom gradients */
+    .bg-gradient-radial {
+      background-image: radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 75% 75%, rgba(59, 130, 246, 0.03) 0%, transparent 50%);
+    }
+    
+    /* Gradient text */
+    .text-gradient {
+      background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    
+    /* Card hover effects */
+    .card-gradient-top {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card-gradient-top::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s ease;
+    }
+    
+    .card-gradient-top:hover::before,
+    .card-gradient-top:focus-within::before {
+      transform: scaleX(1);
+    }
+    
+    /* Button effect */
+    .btn-shine {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn-shine::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.1);
+      transform: translateX(-100%);
+      transition: transform 0.6s ease;
+    }
+    
+    .btn-shine:hover::after {
+      transform: translateX(100%);
+    }
+  </style>
+</head>
+<body>
+  <div class="min-h-screen bg-slate-900 bg-gradient-radial text-slate-100 font-sans pb-12">
+    <div class="container mx-auto px-4 py-8 animate-fade-in">
+      <!-- Header -->
+      <div class="text-center mb-12">
+        <h1 class="text-4xl md:text-5xl font-bold mb-3 text-gradient tracking-tight">
+          RTA-WRT Firmware Downloads
+        </h1>
+        <p class="text-slate-400 text-lg max-w-2xl mx-auto">
+          Find and download the latest firmware images for your device
+        </p>
+      </div>
+
+      <!-- Changelog Section -->
+      <div class="max-w-3xl mx-auto mb-12 opacity-0 animate-fade-in-up" style="animation-delay: 200ms;">
+        <div class="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-lg">
+          <h2 class="text-2xl font-semibold text-slate-100 mb-4">Changelog for openwrt:24.10.0</h2>
+          <ul class="text-slate-300 list-disc list-inside space-y-2">
+            <li>Add support for Amlogic S905X4 chipset
+<li>Fix WiFi stability issues on HG680P devices
+<li>Enhance Netmonitor with real-time bandwidth graphs
+<li>Add luci-app-vpnmanager for simplified VPN configuration
+<li>Optimize boot time for Raspberry Pi 4B/400/CM4
+<li>Update Nikki to v1.20.0
+<li>Fix ModemManager connectivity issues for USB modems
+<li>Improve Tailscale integration with auto-reconnect
+<li>Remove deprecated luci-app-adblock package
+          </ul>
+        </div>
+      </div>
+
+      <!-- Search and Stats -->
+      <div class="max-w-3xl mx-auto opacity-0 animate-fade-in-up" style="animation-delay: 400ms;">
+        <div class="relative mb-6">
+          <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+            <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+          </div>
+          <input
+            id="search"
+            type="text"
+            class="w-full p-4 pl-11 rounded-xl border-2 border-slate-700 bg-slate-800/80 text-slate-100 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 transition-all backdrop-blur-md"
+            placeholder="Search firmware by device name..."
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="flex justify-between items-center mb-6 text-sm text-slate-400">
+          <div id="count-display">Loading firmware data...</div>
+          <div id="last-updated" class="flex items-center">
+            <i class="fa-regular fa-clock mr-2"></i>
+            <span>Updating...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading spinner -->
+      <div id="loader" class="flex justify-center my-12">
+        <div class="w-12 h-12 border-4 border-primary-200/30 border-t-primary-500 rounded-full animate-spin-slow"></div>
+      </div>
+
+      <!-- Firmware list -->
+      <div id="firmware-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-0 animate-fade-in-up" style="animation-delay: 600ms;"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-16 text-center text-slate-500 text-sm">
+      <p>RTA-WRT Firmware Portal © <span id="current-year"></span></p>
+    </div>
+  </div>
+
+  <script>
+    const firmwareDataRaw = `
+Amlogic_s905x2-k6.1.66-DBAIall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x2-k6.1.66-DBAI-all-tunnel.img.gz
+X86_64_Generic_Ext4_Combined_EFI-all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-X86_64_Generic_Ext4_Combined_EFI--all-tunnel.img.gz
+X86_64_Generic_Ext4_Combined-all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-X86_64_Generic_Ext4_Combined--all-tunnel.img.gz
+X86_64_Generic_Ext4_Rootfs-all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-X86_64_Generic_Ext4_Rootfs--all-tunnel.img.gz
+X86_64_Generic_Squashfs_Combined_EFI-all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-X86_64_Generic_Squashfs_Combined_EFI--all-tunnel.img.gz
+X86_64_Generic_Squashfs_Combined-all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-X86_64_Generic_Squashfs_Combined--all-tunnel.img.gz
+X86_64_Generic_Squashfs_Rootfs-all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-X86_64_Generic_Squashfs_Rootfs--all-tunnel.img.gz
+Allwinner_OrangePi_Lite2-k6.1.31-AW64-DBAIall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Allwinner_OrangePi_Lite2-k6.1.31-AW64-DBAI-all-tunnel.img.gz
+Allwinner_OrangePi_1Plus-k6.1.31-AW64-DBAIall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Allwinner_OrangePi_1Plus-k6.1.31-AW64-DBAI-all-tunnel.img.gz
+Allwinner_OrangePi_PC2-k6.1.31-AW64-DBAIall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Allwinner_OrangePi_PC2-k6.1.31-AW64-DBAI-all-tunnel.img.gz
+Amlogic_s905x4-k6.1.66-DBAIall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x4-k6.1.66-DBAI-all-tunnel.img.gz
+Amlogic_s905x-HG680P-NONMOD-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x-HG680P-NONMOD-k5.15.182-all-tunnel.img.gz
+Amlogic_s905x-HG680P-NONMOD-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x-HG680P-NONMOD-k6.1.138-all-tunnel.img.gz
+Allwinner_OrangePi_Zero2-k6.1.31-AW64-DBAIall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Allwinner_OrangePi_Zero2-k6.1.31-AW64-DBAI-all-tunnel.img.gz
+Amlogic_s905x-Nexbox_A95X-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x-Nexbox_A95X-k5.15.182-all-tunnel.img.gz
+Amlogic_s905x-Nexbox_A95X-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x-Nexbox_A95X-k6.1.138-all-tunnel.img.gz
+Broadcom_RaspberryPi_4B-Ext4_Factory-all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Broadcom_RaspberryPi_4B-Ext4_Factory--all-tunnel.img.gz
+Broadcom_RaspberryPi_4B-Ext4_Sysupgrade-all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Broadcom_RaspberryPi_4B-Ext4_Sysupgrade--all-tunnel.img.gz
+Broadcom_RaspberryPi_4B-Squashfs_Factory-all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Broadcom_RaspberryPi_4B-Squashfs_Factory--all-tunnel.img.gz
+Broadcom_RaspberryPi_4B-Squashfs_Sysupgrade-all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Broadcom_RaspberryPi_4B-Squashfs_Sysupgrade--all-tunnel.img.gz
+Amlogic_s912-X92-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s912-X92-k5.15.182-all-tunnel.img.gz
+Amlogic_s912-X92-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s912-X92-k6.1.138-all-tunnel.img.gz
+Amlogic_s905-Beelink_Mini-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905-Beelink_Mini-k5.15.182-all-tunnel.img.gz
+Amlogic_s905-Beelink_Mini-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905-Beelink_Mini-k6.1.138-all-tunnel.img.gz
+Amlogic_s905x2-X96Max-2G-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x2-X96Max-2G-k5.15.182-all-tunnel.img.gz
+Amlogic_s905x2-X96Max-2G-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x2-X96Max-2G-k6.1.138-all-tunnel.img.gz
+Amlogic_s905w-X96_Mini-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905w-X96_Mini-k5.15.182-all-tunnel.img.gz
+Amlogic_s905w-X96_Mini-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905w-X96_Mini-k6.1.138-all-tunnel.img.gz
+Amlogic_s912-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s912-k5.15.182-all-tunnel.img.gz
+Amlogic_s912-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s912-k6.1.138-all-tunnel.img.gz
+Amlogic_s905-MXQPro_Plus-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905-MXQPro_Plus-k5.15.182-all-tunnel.img.gz
+Amlogic_s905-MXQPro_Plus-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905-MXQPro_Plus-k6.1.138-all-tunnel.img.gz
+Amlogic_s905x3-k6.1.66-DBAIall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x3-k6.1.66-DBAI-all-tunnel.img.gz
+Allwinner_OrangePi_ZeroPlus2-k6.1.31-AW64-DBAIall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Allwinner_OrangePi_ZeroPlus2-k6.1.31-AW64-DBAI-all-tunnel.img.gz
+Amlogic_s905x-B860H_v1-v2-NONMOD-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x-B860H_v1-v2-NONMOD-k5.15.182-all-tunnel.img.gz
+Amlogic_s905x-B860H_v1-v2-NONMOD-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x-B860H_v1-v2-NONMOD-k6.1.138-all-tunnel.img.gz
+Amlogic_s905w-W95-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905w-W95-k5.15.182-all-tunnel.img.gz
+Amlogic_s905w-W95-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905w-W95-k6.1.138-all-tunnel.img.gz
+Amlogic_s905w-X96W-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905w-X96W-k5.15.182-all-tunnel.img.gz
+Amlogic_s905w-X96W-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905w-X96W-k6.1.138-all-tunnel.img.gz
+Allwinner_OrangePi_3-k6.1.31-AW64-DBAIall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Allwinner_OrangePi_3-k6.1.31-AW64-DBAI-all-tunnel.img.gz
+Allwinner_OrangePi_ZeroPlus-k6.1.31-AW64-DBAIall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Allwinner_OrangePi_ZeroPlus-k6.1.31-AW64-DBAI-all-tunnel.img.gz
+Rockchip_rk3318_H96-MAX-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Rockchip_rk3318_H96-MAX-k6.1.138-all-tunnel.img.gz
+Amlogic_s905x3-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x3-k5.15.182-all-tunnel.img.gz
+Amlogic_s905x3-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x3-k6.1.138-all-tunnel.img.gz
+Amlogic_s905x-NONMOD-k6.1.66-DBAIall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x-NONMOD-k6.1.66-DBAI-all-tunnel.img.gz
+Amlogic_s905x3-H96Max-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x3-H96Max-k5.15.182-all-tunnel.img.gz
+Amlogic_s905x3-H96Max-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x3-H96Max-k6.1.138-all-tunnel.img.gz
+Allwinner_OrangePi_3LTS-k6.1.31-AW64-DBAIall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Allwinner_OrangePi_3LTS-k6.1.31-AW64-DBAI-all-tunnel.img.gz
+Amlogic_s912-H96Pro_Plus-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s912-H96Pro_Plus-k5.15.182-all-tunnel.img.gz
+Amlogic_s912-H96Pro_Plus-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s912-H96Pro_Plus-k6.1.138-all-tunnel.img.gz
+Amlogic_s905-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905-k5.15.182-all-tunnel.img.gz
+Amlogic_s905-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905-k6.1.138-all-tunnel.img.gz
+Amlogic_s905x2-KM3-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x2-KM3-k5.15.182-all-tunnel.img.gz
+Amlogic_s905x2-KM3-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x2-KM3-k6.1.138-all-tunnel.img.gz
+Allwinner_OrangePi_Prime-k6.1.31-AW64-DBAIall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Allwinner_OrangePi_Prime-k6.1.31-AW64-DBAI-all-tunnel.img.gz
+Amlogic_s905w-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905w-k5.15.182-all-tunnel.img.gz
+Amlogic_s905w-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905w-k6.1.138-all-tunnel.img.gz
+Allwinner_OrangePi_Zero2W-k6.1.31-AW64-DBAIall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Allwinner_OrangePi_Zero2W-k6.1.31-AW64-DBAI-all-tunnel.img.gz
+Amlogic_s905x-NONMOD-k6.1.66-DBAIall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x-NONMOD-k6.1.66-DBAI-all-tunnel.img.gz
+Broadcom_RaspberryPi_3B-Ext4_Factory-all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Broadcom_RaspberryPi_3B-Ext4_Factory--all-tunnel.img.gz
+Broadcom_RaspberryPi_3B-Ext4_Sysupgrade-all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Broadcom_RaspberryPi_3B-Ext4_Sysupgrade--all-tunnel.img.gz
+Broadcom_RaspberryPi_3B-Squashfs_Factory-all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Broadcom_RaspberryPi_3B-Squashfs_Factory--all-tunnel.img.gz
+Broadcom_RaspberryPi_3B-Squashfs_Sysupgrade-all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Broadcom_RaspberryPi_3B-Squashfs_Sysupgrade--all-tunnel.img.gz
+Rockchip_OrangePi_5-k5.10.160-rk35v-dbaiall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Rockchip_OrangePi_5-k5.10.160-rk35v-dbai-all-tunnel.img.gz
+Amlogic_s905x3-X96Max-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x3-X96Max-k5.15.182-all-tunnel.img.gz
+Amlogic_s905x3-X96Max-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x3-X96Max-k6.1.138-all-tunnel.img.gz
+Amlogic_s905x3-HK1-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x3-HK1-k5.15.182-all-tunnel.img.gz
+Amlogic_s905x3-HK1-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x3-HK1-k6.1.138-all-tunnel.img.gz
+Amlogic_s905x2-k5.15.182all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x2-k5.15.182-all-tunnel.img.gz
+Amlogic_s905x2-k6.1.138all-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x2-k6.1.138-all-tunnel.img.gz
+Allwinner_OrangePi_Zero3-k6.1.31-AW64-DBAIall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Allwinner_OrangePi_Zero3-k6.1.31-AW64-DBAI-all-tunnel.img.gz
+Rockchip_OrangePi_3B-k5.10.160-rk35v-dbaiall-tunnel|https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Rockchip_OrangePi_3B-k5.10.160-rk35v-dbai-all-tunnel.img.gz
+    `;
+
+    // Parse firmware data
+    const firmwareData = firmwareDataRaw.trim().split('\n')
+      .filter(line => line.trim().length > 0)
+      .map(line => {
+        const [name, url] = line.trim().split('|');
+        return { 
+          name: name.trim(), 
+          url: url.trim(),
+          id: Math.random().toString(36).substring(2, 10)
+        };
+      });
+
+    const container = document.getElementById("firmware-list");
+    const searchInput = document.getElementById("search");
+    const countDisplay = document.getElementById("count-display");
+    const lastUpdated = document.getElementById("last-updated");
+    const loader = document.getElementById("loader");
+    const currentYear = document.getElementById("current-year");
+    
+    // Set current year in footer
+    currentYear.textContent = new Date().getFullYear().toString();
+    
+    // Set last updated date
+    lastUpdated.querySelector('span').textContent = "Updated: " + new Date().toLocaleDateString();
+    
+    function escapeHTML(str) {
+      return str
+        .replace(/&/g, "&")
+        .replace(/</g, "<")
+        .replace(/>/g, ">")
+        .replace(/"/g, "")
+        .replace(/'/g, "'");
+    }
+
+    function renderFirmwareList(data, animate = false) {
+      container.innerHTML = "";
+      
+      if (data.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-12 px-6 border-2 border-dashed border-slate-700 rounded-2xl text-center">
+            <i class="fa-regular fa-face-frown text-4xl text-slate-500 mb-4"></i>
+            <h3 class="text-xl font-semibold text-slate-300 mb-2">No firmware found</h3>
+            <p class="text-slate-400">Try adjusting your search query</p>
+          </div>
+        `;
+        
+        // Show container when empty
+        container.style.opacity = "1";
+        return;
+      }
+      
+      // Update count display
+      countDisplay.textContent = `Showing ${data.length} firmware ${data.length === 1 ? 'image' : 'images'}`;
+      
+      // Show container when loaded
+      container.style.opacity = "1";
+      
+      data.forEach((item, index) => {
+        const card = document.createElement("div");
+        card.className = "card-gradient-top bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-lg transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-xl hover:bg-slate-700/80 hover:shadow-glow";
+        
+        // Apply a nice staggered animation delay when filtering
+        if (animate && index < 20) {
+          card.style.opacity = "0";
+          card.style.transform = "translateY(10px)";
+          
+          setTimeout(() => {
+            card.style.transition = "all 0.5s ease";
+            card.style.opacity = "1";
+            card.style.transform = "translateY(0)";
+          }, index * 50);
+        }
+
+        card.innerHTML = `
+          <div class="mb-5">
+            <div class="flex items-start mb-3">
+              <i class="fa-solid fa-cube text-primary-500 text-xl mr-3 mt-0.5"></i>
+              <h2 class="text-lg font-semibold text-slate-100 leading-tight">
+                ${escapeHTML(item.name)}
+              </h2>
+            </div>
+            <p class="text-slate-400 text-sm mb-5">
+              Download the latest firmware image for this device. Compatible with RTA-WRT.
+            </p>
+          </div>
+          <a href="${escapeHTML(item.url)}" target="_blank" rel="noopener noreferrer" 
+             class="btn-shine inline-flex items-center bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-300 hover:shadow-lg" 
+             data-id="${item.id}">
+            <i class="fa-solid fa-download mr-2"></i>
+            Download Firmware
+          </a>
+        `;
+
+        container.appendChild(card);
+      });
+      
+      // Add download tracking
+      document.querySelectorAll('[data-id]').forEach(button => {
+        button.addEventListener('click', function() {
+          console.log("Download started:", this.dataset.id);
+          // You can add analytics tracking here
+        });
+      });
+    }
+
+    // Debounce function for search
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
+    // Add event listener with debounce
+    searchInput.addEventListener("input", debounce(() => {
+      const keyword = searchInput.value.toLowerCase();
+      const filtered = firmwareData.filter(item => 
+        item.name.toLowerCase().includes(keyword)
+      );
+      renderFirmwareList(filtered, true);
+    }, 300));
+
+    // Initial render with delay for smooth animation
+    setTimeout(() => {
+      // Hide loader
+      loader.style.display = "none";
+      
+      // Show firmware list with animation
+      container.parentElement.querySelectorAll('.max-w-3xl').forEach(el => {
+        el.style.opacity = "1";
+      });
+      renderFirmwareList(firmwareData, true);
+    }, 800);
+    
+    // Make search input focused after load
+    setTimeout(() => {
+      searchInput.focus();
+    }, 1000);
+  </script>
+</body>
+</html>
