@@ -6,10 +6,10 @@ on:
     # https://crontab.guru/every-2-hours
     # - cron: '0 */2 * * *'
   workflow_dispatch: # Memungkinkan menjalankan workflow secara manual dari tab Actions
-#   push:
-#     branches:
-#       #- main # Atau branch utama Anda, jika build script atau dependencies-nya berubah
-#       - dev
+  push:
+    branches:
+      - main # Atau branch utama Anda, jika build script atau dependencies-nya berubah
+      - dev
 
 jobs:
   build-data:
@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: "pages"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
