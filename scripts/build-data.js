@@ -6,7 +6,7 @@ const https = require('https'); // Modul https bawaan Node.js
 const REPO_OWNER = 'rizkikotet-dev'; // Ganti dengan owner repo Anda
 const REPO_NAME = 'RTA-WRT';       // Ganti dengan nama repo Anda
 const GITHUB_TOKEN = process.env.REPO_PAT || process.env.GITHUB_TOKEN; // Ambil token dari environment variable
-const OUTPUT_DIR = path.join(__dirname, '..', 'public', '_data'); // Output data ke public/_data (sesuaikan jika path HTML Anda berbeda)
+const OUTPUT_DIR = path.join(__dirname, '..', 'data'); // Output data (sesuaikan jika path HTML Anda berbeda)
 
 // Fungsi helper untuk melakukan GET request ke GitHub API
 async function fetchGitHubAPI(endpoint) {
