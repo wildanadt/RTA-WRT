@@ -524,7 +524,7 @@
             // Path ke file JSON statis Anda. Sesuaikan jika struktur folder Anda berbeda.
             // Jika index.html ada di root, dan folder data di _data, maka path-nya './_data/'
             // Jika index.html ada di public/, dan folder data di public/_data, maka path-nya './_data/' juga (relatif thd index.html)
-            const dataPath = './_data/'; // Pastikan ini benar relatif terhadap index.html Anda
+            const dataPath = './public/_data/'; // Pastikan ini benar relatif terhadap index.html Anda
 
             // Tambahkan cache buster untuk pengembangan, bisa dihapus untuk produksi jika tidak perlu
             const cacheBuster = `?v=${new Date().getTime()}`;
