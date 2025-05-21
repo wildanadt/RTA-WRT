@@ -522,8 +522,6 @@
             let releaseDataForDisplay; // Data rilis yang akan ditampilkan (bisa stable atau prerelease)
             let assets = [];
             // Path ke file JSON statis Anda. Sesuaikan jika struktur folder Anda berbeda.
-            // Jika index.html ada di root, dan folder data di _data, maka path-nya './_data/'
-            // Jika index.html ada di public/, dan folder data di public/_data, maka path-nya './_data/' juga (relatif thd index.html)
             const dataPath = './data/'; // Pastikan ini benar relatif terhadap index.html Anda
 
             // Tambahkan cache buster untuk pengembangan, bisa dihapus untuk produksi jika tidak perlu
@@ -590,45 +588,102 @@
         },
 
         async fetchChangelog(releaseBody) {
-          if (!this.latestVersion) {
-            this.changelog = ['- Changelog requires a valid release version.'];
-            this.renderedChangelog = marked.parse(this.changelog.join('\n'));
-            return;
-          }
-          if (releaseBody && releaseBody.trim() !== '') {
-              this.changelog = releaseBody.split('\n').filter(line => line.trim() !== '' && !line.trim().startsWith('')); // Hapus komentar HTML
-              this.renderedChangelog = marked.parse(releaseBody, { gfm: true, breaks: true, sanitize: false }); // sanitize: false jika Anda percaya sumbernya
-              return;
-          }
+            console.log("Fetching changelog. latestVersion:", this.latestVersion, "Release body provided:", !!releaseBody);
+            // console.log("Actual releaseBody content (first 500 chars):", String(releaseBody).substring(0, 500)); // Anda sudah lihat ini
 
-          // Fallback ke file changelog_content.md statis
-          try {
-            const dataPath = './_data/';
-            const cacheBuster = `?v=${new Date().getTime()}`;
-            const response = await fetch(`${dataPath}changelog_content.md${cacheBuster}`);
-            if (!response.ok) throw new Error(`Failed to fetch changelog_content.md: ${response.status} ${response.statusText}`);
-            const mdContent = await response.text();
-            this.parseChangelogMD(mdContent);
-            this.renderedChangelog = marked.parse(this.changelog.join('\n'), { gfm: true, breaks: true, sanitize: false });
-          } catch (error) {
-            console.error('Error fetching local changelog_content.md:', error);
-            this.changelog = [`- Unable to load changelog: ${error.message}`];
-            this.renderedChangelog = marked.parse(this.changelog.join('\n'));
-          }
+            if (!this.latestVersion) {
+                this.changelog = ['- Changelog requires a valid release version.'];
+                this.renderedChangelog = marked.parse(this.changelog.join('\n'));
+                return;
+            }
+
+            let useReleaseBodyAsChangelog = false;
+            if (releaseBody && releaseBody.trim() !== '') {
+                // Coba proses releaseBody menjadi array baris
+                const potentialChangelogLines = String(releaseBody).split('\n').filter(line => {
+                    const trimmedLine = line.trim();
+                    // Filter dasar: bukan baris kosong, bukan komentar HTML
+                    // Mungkin perlu filter lebih canggih untuk menghapus heading jika tidak ada list item di bawahnya
+                    return trimmedLine !== '' && !trimmedLine.startsWith('');
+                });
+
+                // Cek apakah ada item list aktual (dimulai dengan -, *, atau angka.)
+                const hasListItems = potentialChangelogLines.some(line => /^\s*[-*]\s|\d+\.\s/.test(line.trim()));
+
+                if (hasListItems) {
+                    this.changelog = potentialChangelogLines;
+                    this.renderedChangelog = marked.parse(this.changelog.join('\n'), { gfm: true, breaks: true, sanitize: false });
+                    console.log("Changelog array from release body (has list items):", this.changelog);
+                    console.log("Rendered changelog HTML from release body:", this.renderedChangelog);
+                    useReleaseBodyAsChangelog = true;
+                } else {
+                    console.log("Release body does not contain list items, will try to parse from CHANGELOG.md file.");
+                }
+            }
+
+            if (!useReleaseBodyAsChangelog) {
+                console.log("Falling back to changelog_content.md for version:", this.latestVersion);
+                try {
+                    const dataPath = './data/'; // Pastikan path ini benar
+                    const cacheBuster = `?v=${new Date().getTime()}`;
+                    const response = await fetch(`${dataPath}changelog_content.md${cacheBuster}`);
+                    console.log("Fetch changelog_content.md status:", response.status);
+                    if (!response.ok) throw new Error(`Failed to fetch changelog_content.md: ${response.status} ${response.statusText}`);
+                    const mdContent = await response.text();
+                    // console.log("Raw mdContent from file:", mdContent.substring(0, 200) + "...");
+                    this.parseChangelogMD(mdContent); // Ini akan mengisi this.changelog dengan bagian yang relevan
+                    this.renderedChangelog = marked.parse(this.changelog.join('\n'), { gfm: true, breaks: true, sanitize: false });
+                    console.log("Changelog from file after parsing (for version " + this.latestVersion + "):", this.changelog);
+                    console.log("Rendered changelog HTML from file:", this.renderedChangelog);
+                } catch (error) {
+                    console.error('Error fetching/parsing local changelog_content.md:', error);
+                    this.changelog = [`- Unable to load changelog: ${error.message}`];
+                    this.renderedChangelog = marked.parse(this.changelog.join('\n'));
+                }
+            }
+            // Pastikan x-show dievaluasi ulang jika changelog kosong setelah semua usaha
+            if (this.changelog.length === 0 || (this.changelog.length === 1 && this.changelog[0].startsWith('- No specific changelog entries found'))) {
+                console.log("No meaningful changelog entries found for display.");
+                // Anda bisa set this.changelog = [] di sini jika ingin x-show menyembunyikannya
+                // Atau biarkan pesan "No specific changelog entries" yang ditampilkan
+            }
         },
 
         parseChangelogMD(content) {
-          const lines = content.split('\n');
-          let capturing = false; this.changelog = [];
-          const versionRegex = new RegExp(`^##\\s*\\[?v?${this.latestVersion.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]?`, 'i');
-          for (const line of lines) {
-            if (versionRegex.test(line.trim())) { capturing = true; continue; }
-            if (capturing && line.trim().startsWith('## ')) break;
-            if (capturing && line.trim() !== '' && !line.trim().startsWith('')) {
-                this.changelog.push(line.replace(/^[-*]\s*/, ''));
+            const lines = content.split('\n');
+            let capturing = false; this.changelog = [];
+            // Escape karakter spesial regex dari latestVersion
+            const escapedVersion = this.latestVersion.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const versionRegex = new RegExp(`^##\\s*\\[?v?${escapedVersion}\\]?`, 'i');
+            console.log("parseChangelogMD: Searching for version header matching regex:", versionRegex.source); // Log regex yang digunakan
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                // console.log("parseChangelogMD: Checking line:", trimmedLine); // Log setiap baris (bisa sangat banyak)
+
+                if (versionRegex.test(trimmedLine)) {
+                    capturing = true;
+                    console.log("parseChangelogMD: Found matching version header:", trimmedLine); // Log jika header cocok
+                    continue; // Jangan masukkan baris header itu sendiri ke changelog
+                }
+
+                if (capturing && trimmedLine.startsWith('## ')) { // Akhir dari bagian versi saat ini
+                    console.log("parseChangelogMD: Found next version header, stopping capture for current version.");
+                    break;
+                }
+
+                if (capturing && trimmedLine !== '' && !trimmedLine.startsWith('')) {
+                    this.changelog.push(trimmedLine.replace(/^[-*]\s*/, '')); // Hapus list marker jika ada, karena CSS akan menambahkannya
+                    // console.log("parseChangelogMD: Added to changelog array:", trimmedLine.replace(/^[-*]\s*/, ''));
+                }
             }
-          }
-          if (this.changelog.length === 0) this.changelog = ['- No specific changelog entries found for this version in CHANGELOG.md.'];
+
+            if (this.changelog.length === 0) {
+                console.log("parseChangelogMD: No specific entries found, setting default message.");
+                this.changelog = ['- No specific changelog entries found for this version in CHANGELOG.md.'];
+            } else {
+                console.log("parseChangelogMD: Final changelog entries for version " + this.latestVersion + ":", this.changelog);
+            }
         },
 
         filterFirmware() {
@@ -694,22 +749,35 @@
             if (!name) return 'Unknown Device';
             return name.replace(/\.(bin|img|tar|gz|trx|img\.gz)$/i, '').replace(/[_-]/g, ' ').replace(/rtawrt/i, '').replace(/\s+/g, ' ').trim().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
         },
+
         getDeviceType(name) {
-            if (!name) return 'Device';
-            const n = name.toLowerCase(); if (n.includes('router') || n.includes('rt-')) return 'Router'; if (n.includes('gateway')) return 'Gateway'; if (n.includes('extender') || n.includes('repeater')) return 'Extender'; if (n.includes('ap') || n.includes('accesspoint') || n.includes('access point')) return 'Access Point'; if (n.includes('switch')) return 'Switch'; return 'Device';
+          if (name.includes('X86_64')) return 'X86 64';
+          if (name.includes('Amlogic')) return 'Amlogic';
+          if (name.includes('Rockchip')) return 'Rockchip';
+          if (name.includes('Allwinner')) return 'Allwinner';
+          if (name.includes('Broadcom')) return 'Broadcom';
+          return 'Generic Devices';
         },
         getKernelVersion(name) {
             if (!name) return 'OpenWrt Based';
-            const kernelMatch = name.match(/kernel(?:-|_)(\d+\.\d+(?:\.\d+)?)/i); if (kernelMatch && kernelMatch[1]) return `Kernel ${kernelMatch[1]}`;
+            const kernelMatch = name.match(/k([0-9]+\.[0-9]+\.[0-9]+)/); if (kernelMatch && kernelMatch[1]) return `Kernel ${kernelMatch[1]}`;
             const openWrtMatch = name.match(/openwrt(?:-|_)(\d+\.\d+)/i); if (openWrtMatch && openWrtMatch[1]) return `OpenWrt ${openWrtMatch[1]}`;
             return 'OpenWrt Based';
         },
+
         getModelName(name) {
-            if (!name) return 'Generic Device';
-            const lowerName = name.toLowerCase(); const modelPatterns = [/(rt-(?:ac|ax|n)\d+[a-z]*(?:_v\d)?)/i, /(archer AX\d+|archer C\d+ v\d+|archer [a-z]\d+)/i, /(wrt\d+(?:ac|acs|ax)[a-z]*(?:_v\d)?)/i, /(r\d{4}[a-z]*)/i, /(e[ar]\d{4}[a-z]*)/i, /(dir[-_]?\d+[a-z]*)/i, /([a-z0-9]+[-_][a-z0-9]+)/i, /([a-z]+\d+)/i ];
-            for (const pattern of modelPatterns) { const match = lowerName.match(pattern); if (match && match[1]) return match[1].toUpperCase().replace(/[-_]/g, ' ');}
-            const basicMatch = lowerName.match(/^([a-z0-9]+(?:[-_][a-z0-9]+)?)/); if (basicMatch && basicMatch[1]) return basicMatch[1].toUpperCase().replace(/[-_]/g, ' ');
-            return 'Generic Device';
+          if (name.includes('OrangePi')) return 'Orange Pi Series devices';
+          if (name.includes('Amlogic')) {
+            if (name.includes('NONMOD')) return 'Amlogic Non Mod SDCARD devices';
+            if (name.includes('Mod_SDCard')) return 'Amlogic Mod SDCARD devices';
+            return 'Amlogic Series devices';
+          }
+          if (name.includes('X86_64')) {
+            if (name.includes('EFI')) return 'x86_64 EFI systems';
+            if (name.includes('Rootfs')) return 'x86_64 Rootfs';
+            return 'x86_64 systems';
+          }
+          return 'compatible devices';
         },
 
         showItemInfo(item) {
