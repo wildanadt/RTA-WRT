@@ -415,12 +415,17 @@ generate_firmware_html() {
     .search-animate:focus {
       transform: scale(1.01);
     }
+
+    .swal-html-container {
+      max-height: 70vh;
+      overflow-y: auto;
+    }
   </style>
 </head>
 <body class="antialiased" x-data="firmwareApp()">
   <div class="min-h-screen bg-gradient-mesh text-slate-100 font-sans pb-8">
     <!-- Navbar -->
-    <nav class="backdrop-blur-md bg-slate-900/80 sticky top-0 z-50 shadow-md border-b border-slate-800/80">
+    <nav class="backdrop-blur-md bg-slate-900/80 sticky top-0 z-50 shadow-md border-b border-slate-800/80" x-data="{ isMobileMenuOpen: false }">
       <div class="container mx-auto px-4 py-3 flex flex-wrap items-center justify-between">
         <div class="flex items-center space-x-2">
           <div class="h-10 w-10 rounded-lg bg-primary-600 flex items-center justify-center shadow-glow">
@@ -451,35 +456,47 @@ generate_firmware_html() {
           </a>
         </div>
         
-        <button class="md:hidden text-white focus:outline-none">
-          <i class="fa-solid fa-bars text-xl"></i>
+        <button 
+          class="md:hidden text-white focus:outline-none" 
+          @click="isMobileMenuOpen = !isMobileMenuOpen"
+          :aria-expanded="isMobileMenuOpen"
+          aria-label="Toggle mobile menu">
+          <i :class="isMobileMenuOpen ? 'fa-solid fa-times' : 'fa-solid fa-bars'" class="text-xl"></i>
         </button>
       </div>
-    </nav>
-
-    <!-- Mobile Menu (hidden by default) -->
-    <div class="md:hidden hidden bg-slate-900 border-b border-slate-800">
-      <div class="container mx-auto px-4 py-3">
-        <div class="flex flex-col space-y-3">
-          <a href="#" class="text-white py-2 px-3 rounded-lg bg-primary-800/30 flex items-center space-x-2">
-            <i class="fa-solid fa-download text-primary-400"></i>
-            <span>Firmware</span>
-          </a>
-          <a href="#" class="text-slate-300 hover:text-white py-2 px-3 rounded-lg hover:bg-slate-800/50 flex items-center space-x-2">
-            <i class="fa-solid fa-book"></i>
-            <span>Documentation</span>
-          </a>
-          <a href="#" class="text-slate-300 hover:text-white py-2 px-3 rounded-lg hover:bg-slate-800/50 flex items-center space-x-2">
-            <i class="fa-solid fa-code-branch"></i>
-            <span>GitHub</span>
-          </a>
-          <a href="#" class="text-slate-300 hover:text-white py-2 px-3 rounded-lg hover:bg-slate-800/50 flex items-center space-x-2">
-            <i class="fa-solid fa-circle-question"></i>
-            <span>Support</span>
-          </a>
+      
+      <!-- Mobile Menu -->
+      <div 
+        class="md:hidden bg-slate-900 border-b border-slate-800"
+        x-show="isMobileMenuOpen"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 transform -translate-y-4"
+        x-transition:enter-end="opacity-100 transform translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 transform translate-y-0"
+        x-transition:leave-end="opacity-0 transform -translate-y-4">
+        <div class="container mx-auto px-4 py-3">
+          <div class="flex flex-col space-y-3">
+            <a href="#" class="text-white py-2 px-3 rounded-lg bg-primary-800/30 flex items-center space-x-2">
+              <i class="fa-solid fa-download text-primary-400"></i>
+              <span>Firmware</span>
+            </a>
+            <a href="#" class="text-slate-300 hover:text-white py-2 px-3 rounded-lg hover:bg-slate-800/50 flex items-center space-x-2">
+              <i class="fa-solid fa-book"></i>
+              <span>Documentation</span>
+            </a>
+            <a href="https://github.com/rizkikotet-dev/RTA-WRT" class="text-slate-300 hover:text-white py-2 px-3 rounded-lg hover:bg-slate-800/50 flex items-center space-x-2">
+              <i class="fa-solid fa-code-branch"></i>
+              <span>GitHub</span>
+            </a>
+            <a href="https://t.me/backup_rtawrt" class="text-slate-300 hover:text-white py-2 px-3 rounded-lg hover:bg-slate-800/50 flex items-center space-x-2">
+              <i class="fa-solid fa-circle-question"></i>
+              <span>Support</span>
+            </a>
+          </div>
         </div>
       </div>
-    </div>
+    </nav>
 
     <!-- Hero Section -->
     <div class="container mx-auto px-4 pt-12 pb-8" data-aos="fade-up" data-aos-duration="800">
@@ -507,16 +524,10 @@ generate_firmware_html() {
           
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-2xl font-semibold text-slate-100">Changelog <span class="text-primary-400">${source_val}:${version_val}</span></h2>
-            <button 
-              @click="showFullChangelog()" 
-              class="text-primary-400 hover:text-primary-300 text-sm font-medium flex items-center">
-              <span>View full changelog</span>
-              <i class="fa-solid fa-arrow-right ml-1.5"></i>
-            </button>
           </div>
           
           <ul class="text-slate-300 space-y-3">
-            $(echo "$changelog_js_escaped" | head -n 3 | sed 's/│ • /<li class="flex items-start"><i class="fa-solid fa-circle-check text-primary-500 mt-1 mr-2"><\/i><span>/g; s/$/<\/span><\/li>/g')
+            $(echo "$changelog_js_escaped" | sed 's/│ • /<li class="flex items-start"><i class="fa-solid fa-circle-check text-primary-500 mt-1 mr-2"><\/i><span>/g; s/$/<\/span><\/li>/g')
           </ul>
           
           <div class="absolute top-0 right-0 w-32 h-32 transform translate-x-16 -translate-y-16 bg-primary-500/10 rounded-full blur-xl"></div>
@@ -879,26 +890,6 @@ ${firmware_js_escaped}
           });
         },
         
-        showFullChangelog() {
-          Swal.fire({
-            title: 'Changelog for Version ${version_val}',
-            html: \`
-              <div class="text-left">
-                <h3 class="text-lg font-semibold mb-3 text-primary-400">Changelog Details</h3>
-                <ul class="space-y-2 mb-4 text-sm">
-                  $(echo "$changelog_js_escaped" | sed 's/│ • /<li>• /g; s/$/<\/li>/g')
-                </ul>
-              </div>
-            \`,
-            showCloseButton: true,
-            showConfirmButton: false,
-            width: '600px',
-            customClass: {
-              container: 'swal-wide'
-            }
-          });
-        },
-        
         showDeviceGuide() {
           Swal.fire({
             title: 'Device Compatibility Guide',
@@ -1050,7 +1041,8 @@ for (( i=0; i<${#ALL_BUTTONS[@]}; i+=2 )); do
 done
 
 # Escape full changelog for JavaScript in HTML
-CHANGELOG_JS_ESCAPED=$(echo "$CHANGELOG_FULL" | sed 's/"/\\"/g; s/|/\\|/g; s/\r//g') # Remove carriage returns
+CHANGELOG_JS_ESCAPED=$(echo "$CHANGELOG" | sed 's/"/\\"/g; s/|/\\|/g; s/\r//g') # Remove carriage returns
+echo $CHANGELOG_JS_ESCAPED
 
 # 8. Generate firmware.html
 generate_firmware_html "$FIRMWARE_JS_ESCAPED" "$CHANGELOG_JS_ESCAPED" "$SOURCE" "$VERSION"
