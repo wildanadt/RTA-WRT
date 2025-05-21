@@ -424,7 +424,7 @@
     function firmwareApp() {
       return {
         firmwareData: [],
-        allReleasesData: [], // Untuk menyimpan semua rilis dari file JSON
+        allReleasesData: [],
         filteredFirmware: [],
         searchQuery: '',
         loading: true,
@@ -436,23 +436,20 @@
         errorState: false,
         errorMessage: '',
         noPreReleasesFoundError: false,
-
-        selectedReleaseTypeId: 'stable', // 'stable' atau 'prerelease'
+        selectedReleaseTypeId: 'stable',
 
         get isPrereleaseActive() {
           return this.selectedReleaseTypeId === 'prerelease';
         },
 
         get themePrefix() {
-            // Mengembalikan prefix tema yang sebenarnya aktif, bahkan jika prerelease fallback ke stable data
             if (this.selectedReleaseTypeId === 'prerelease' && !this.noPreReleasesFoundError) {
                 return 'crimson';
             }
             return 'primary';
         },
-        
+
         get currentThemeColors() {
-            // Mengembalikan palet warna yang sebenarnya aktif
             if (this.selectedReleaseTypeId === 'prerelease' && !this.noPreReleasesFoundError) {
                 return tailwind.config.theme.extend.colors.crimson;
             }
@@ -461,10 +458,10 @@
 
         init() {
           this.updateThemeVariables();
-          this.fetchData(); // Ganti dengan loadDataFromCacheOrFetch jika Anda implementasi cache sisi klien juga
+          this.fetchData();
 
           this.$watch('filteredFirmware', () => { this.$nextTick(() => { AOS.refresh(); }); });
-          this.$watch('selectedReleaseTypeId', (newValue, oldValue) => { // Perhatikan perubahan ini
+          this.$watch('selectedReleaseTypeId', (newValue, oldValue) => {
             if (newValue !== oldValue) {
                 this.updateThemeVariables();
                 this.fetchData();
@@ -474,7 +471,7 @@
 
         setSelectedReleaseType(typeId) {
             if (this.selectedReleaseTypeId !== typeId) {
-                this.selectedReleaseTypeId = typeId; // $watch akan menangani sisanya
+                this.selectedReleaseTypeId = typeId;
             }
         },
 
@@ -487,13 +484,10 @@
                 document.documentElement.style.setProperty(`--theme-color-${shade}`, paletteToUse[shade]);
             }
             document.documentElement.style.setProperty('--theme-color-DEFAULT', paletteToUse[500]);
-
             document.documentElement.style.setProperty('--theme-color-500-alpha-10', this.hexToRgba(paletteToUse[500], 0.1));
             document.documentElement.style.setProperty('--theme-color-800-alpha-10', this.hexToRgba(paletteToUse[800], 0.1));
-            // Pastikan semua variabel yang digunakan di CSS diperbarui di sini
             document.documentElement.style.setProperty(`--theme-color-950`, paletteToUse[950]);
             document.documentElement.style.setProperty(`--theme-color-800`, paletteToUse[800]);
-
 
             const themeColorMeta = document.querySelector('meta[name="theme-color"]');
             if (themeColorMeta) {
@@ -503,8 +497,8 @@
 
         hexToRgba(hex, alpha = 1) {
             if (!hex || typeof hex !== 'string' || hex.charAt(0) !== '#') {
-                console.warn(`Invalid hex color: ${hex} for hexToRgba. Defaulting to black.`);
-                return `rgba(0,0,0,${alpha})`; // Default color if hex is invalid
+                // console.warn(`Invalid hex color: ${hex} for hexToRgba. Defaulting to black.`);
+                return `rgba(0,0,0,${alpha})`;
             }
             const r = parseInt(hex.slice(1, 3), 16);
             const g = parseInt(hex.slice(3, 5), 16);
@@ -516,15 +510,12 @@
           this.loading = true;
           this.errorState = false;
           this.errorMessage = '';
-          this.noPreReleasesFoundError = false; // Reset flag ini setiap kali fetch
+          this.noPreReleasesFoundError = false;
 
           try {
-            let releaseDataForDisplay; // Data rilis yang akan ditampilkan (bisa stable atau prerelease)
+            let releaseDataForDisplay;
             let assets = [];
-            // Path ke file JSON statis Anda. Sesuaikan jika struktur folder Anda berbeda.
-            const dataPath = './data/'; // Pastikan ini benar relatif terhadap index.html Anda
-
-            // Tambahkan cache buster untuk pengembangan, bisa dihapus untuk produksi jika tidak perlu
+            const dataPath = './data/';
             const cacheBuster = `?v=${new Date().getTime()}`;
 
             if (this.selectedReleaseTypeId === 'stable') {
@@ -532,24 +523,21 @@
               if (!response.ok) throw new Error(`Failed to fetch stable_release.json: ${response.status} ${response.statusText}`);
               releaseDataForDisplay = await response.json();
               assets = releaseDataForDisplay.assets || [];
-            } else { // 'prerelease'
+            } else {
               const response = await fetch(`${dataPath}all_releases.json${cacheBuster}`);
               if (!response.ok) throw new Error(`Failed to fetch all_releases.json: ${response.status} ${response.statusText}`);
               this.allReleasesData = await response.json();
-
               const preReleases = this.allReleasesData.filter(r => r.prerelease);
 
               if (preReleases.length > 0) {
-                releaseDataForDisplay = preReleases[0]; // API GitHub mengembalikan yang terbaru di awal
+                releaseDataForDisplay = preReleases[0];
                 assets = releaseDataForDisplay.assets || [];
               } else {
-                this.noPreReleasesFoundError = true; // Set flag bahwa tidak ada pra-rilis
-                // Fallback ke data stabil jika tidak ada pra-rilis
+                this.noPreReleasesFoundError = true;
                 const stableResponse = await fetch(`${dataPath}stable_release.json${cacheBuster}`);
                 if (!stableResponse.ok) throw new Error(`No pre-releases found, and failed to fetch fallback stable_release.json: ${stableResponse.status} ${stableResponse.statusText}`);
                 releaseDataForDisplay = await stableResponse.json();
                 assets = releaseDataForDisplay.assets || [];
-                // this.selectedReleaseTypeId tidak diubah, agar UI tetap konsisten (meskipun data beda)
               }
             }
 
@@ -559,7 +547,7 @@
             this.firmwareData = assets.map(asset => ({
               id: asset.id,
               name: asset.name,
-              url: asset.browser_download_url, // Ini sudah URL absolut dari skrip build
+              url: asset.browser_download_url,
               size: this.formatFileSize(asset.size),
               created_at: new Date(asset.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
               download_count: asset.download_count ? asset.download_count.toLocaleString() : 'N/A',
@@ -573,7 +561,7 @@
             this.filterFirmware();
 
           } catch (error) {
-            console.error('Error fetching local static data:', error);
+            // console.error('Error fetching local static data:', error); // Dihapus
             this.errorState = true;
             this.errorMessage = `Failed to load firmware data. The site's data files might be missing or corrupted. Please try again later or contact support. Details: ${error.message}`;
             this.firmwareData = []; this.filteredFirmware = []; this.changelog = []; this.latestVersion = ''; this.releaseDate = '';
@@ -582,15 +570,12 @@
             this.updateCountDisplay();
             this.$nextTick(() => {
                 AOS.refresh();
-                this.updateThemeVariables(); // Panggil lagi untuk memastikan tema sesuai setelah data dimuat
+                this.updateThemeVariables();
             });
           }
         },
 
         async fetchChangelog(releaseBody) {
-            console.log("Fetching changelog. latestVersion:", this.latestVersion, "Release body provided:", !!releaseBody);
-            // console.log("Actual releaseBody content (first 500 chars):", String(releaseBody).substring(0, 500)); // Anda sudah lihat ini
-
             if (!this.latestVersion) {
                 this.changelog = ['- Changelog requires a valid release version.'];
                 this.renderedChangelog = marked.parse(this.changelog.join('\n'));
@@ -599,112 +584,18 @@
 
             let useReleaseBodyAsChangelog = false;
             if (releaseBody && releaseBody.trim() !== '') {
-                // Coba proses releaseBody menjadi array baris
                 const potentialChangelogLines = String(releaseBody).split('\n').filter(line => {
                     const trimmedLine = line.trim();
-                    // Filter dasar: bukan baris kosong, bukan komentar HTML
-                    // Mungkin perlu filter lebih canggih untuk menghapus heading jika tidak ada list item di bawahnya
-                    return trimmedLine !== '' && !trimmedLine.startsWith('');
-                });
-
-                // Cek apakah ada item list aktual (dimulai dengan -, *, atau angka.)
-                const hasListItems = potentialChangelogLines.some(line => /^\s*[-*]\s|\d+\.\s/.test(line.trim()));
-
-                if (hasListItems) {
-                    this.changelog = potentialChangelogLines;
-                    this.renderedChangelog = marked.parse(this.changelog.join('\n'), { gfm: true, breaks: true, sanitize: false });
-                    console.log("Changelog array from release body (has list items):", this.changelog);
-                    console.log("Rendered changelog HTML from release body:", this.renderedChangelog);
-                    useReleaseBodyAsChangelog = true;
-                } else {
-                    console.log("Release body does not contain list items, will try to parse from CHANGELOG.md file.");
-                }
-            }
-
-            if (!useReleaseBodyAsChangelog) {
-                console.log("Falling back to changelog_content.md for version:", this.latestVersion);
-                try {
-                    const dataPath = './data/'; // Pastikan path ini benar
-                    const cacheBuster = `?v=${new Date().getTime()}`;
-                    const response = await fetch(`${dataPath}changelog_content.md${cacheBuster}`);
-                    console.log("Fetch changelog_content.md status:", response.status);
-                    if (!response.ok) throw new Error(`Failed to fetch changelog_content.md: ${response.status} ${response.statusText}`);
-                    const mdContent = await response.text();
-                    // console.log("Raw mdContent from file:", mdContent.substring(0, 200) + "...");
-                    this.parseChangelogMD(mdContent); // Ini akan mengisi this.changelog dengan bagian yang relevan
-                    this.renderedChangelog = marked.parse(this.changelog.join('\n'), { gfm: true, breaks: true, sanitize: false });
-                    console.log("Changelog from file after parsing (for version " + this.latestVersion + "):", this.changelog);
-                    console.log("Rendered changelog HTML from file:", this.renderedChangelog);
-                } catch (error) {
-                    console.error('Error fetching/parsing local changelog_content.md:', error);
-                    this.changelog = [`- Unable to load changelog: ${error.message}`];
-                    this.renderedChangelog = marked.parse(this.changelog.join('\n'));
-                }
-            }
-            // Pastikan x-show dievaluasi ulang jika changelog kosong setelah semua usaha
-            if (this.changelog.length === 0 || (this.changelog.length === 1 && this.changelog[0].startsWith('- No specific changelog entries found'))) {
-                console.log("No meaningful changelog entries found for display.");
-                // Anda bisa set this.changelog = [] di sini jika ingin x-show menyembunyikannya
-                // Atau biarkan pesan "No specific changelog entries" yang ditampilkan
-            }
-        },
-
-        parseChangelogMD(content) {
-            const lines = content.split('\n');
-            let capturing = false;
-            this.changelog = []; // Reset at the start of function
-            
-            // Create a version string that can be more flexible
-            // The issue seems to be with the regex pattern matching
-            const version = this.latestVersion;
-            
-            console.log(`[DEBUG] parseChangelogMD for version: ${version}`);
-            
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-                const trimmedLine = line.trim();
-                
-                // console.log(`[DEBUG] Processing line ${i + 1}: '${trimmedLine}' | Capturing: ${capturing}`);
-                
-                if (!capturing) {
-                    // Look for the version header in a more flexible way
-                    // Match patterns like: ## [rtawrt-openwrt-24.10.1-21052025] - 2025-05-21
-                    if (trimmedLine.includes(version) && trimmedLine.startsWith('## ')) {
-                        capturing = true;
-                        console.log(`[DEBUG] Found version header: '${trimmedLine}'`);
-                    }
-                } else {
-                    // If already capturing and encounter a new section header, stop
-                    if (trimmedLine.startsWith('## ')) {
-                        console.log(`[DEBUG] Found next section header: '${trimmedLine}'. Stopping capture.`);
-                        break;
-                    }
-                    
-                    // Check if this is a valid line to add
-                    // We want to keep bullet points (- or *) intact in the final output
-                    if (trimmedLine !== '' && !trimmedLine.startsWith('<!--')) {
-                        // For bullet points, keep them as is
-                        if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
-                            this.changelog.push(trimmedLine);
-                        } else if (trimmedLine.match(/^\d+\.\s/)) {
-                            // Handle numbered lists
-                            this.changelog.push(trimmedLine);
-                        } else {
-                            // Other content, could be paragraph text or headers
-                            this.changelog.push(trimmedLine);
-                        }
-                        console.log(`[DEBUG] ADDED to changelog: '${trimmedLine}'`);
+                    return trimmedLine !== '' && !trimmedLine.startsWith(''); // Filter komentar yang benar
+                    if (trimmedLine !== '' && !isComment) {
+                        // Tidak perlu replace /^[-*]\s*/ jika CSS Anda sudah menangani bullet point
+                        this.changelog.push(trimmedLine); 
                     }
                 }
             }
-            
-            console.log(`[DEBUG] AFTER LOOP, this.changelog is: ${JSON.stringify(this.changelog)} | LENGTH: ${this.changelog.length}`);
             
             if (this.changelog.length === 0) {
-                console.log("[DEBUG] No specific entries found, setting default message.");
                 this.changelog = ['- No specific changelog entries found for this version in CHANGELOG.md.'];
-            } else {
-                console.log(`[DEBUG] Final changelog entries for ${version}: ${JSON.stringify(this.changelog)}`);
             }
         },
 
@@ -754,7 +645,7 @@
               background: '#1E293B', color: '#F1F5F9', iconColor: this.currentThemeColors[500]
             });
           }).catch(err => {
-            console.error('Failed to copy link:', err);
+            // console.error('Failed to copy link:', err); // Dihapus
             Swal.fire({
               title: 'Copy Failed', text: 'Could not copy link. See console for details.', icon: 'error',
               toast: true, position: 'bottom-end', showConfirmButton: false, timer: 3000,
