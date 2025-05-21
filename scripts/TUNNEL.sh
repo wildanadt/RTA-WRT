@@ -98,7 +98,7 @@ setup_openclash() {
     
     # Download and extract core
     handle_package "${openclash_core}" "files/etc/openclash/core/clash_meta.tar.gz" \
-        "tar -xvf files/etc/openclash/core/clash_meta.tar.gz -C files/etc/openclash/core && rm clash_meta.tar.gz" || return 1
+        "tar -xvf files/etc/openclash/core/clash_meta.tar.gz -C files/etc/openclash/core" || return 1
     
     return 0
 }
