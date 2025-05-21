@@ -2912,7 +2912,7 @@
         "content_type": "application/gzip",
         "state": "uploaded",
         "size": 468506777,
-        "download_count": 6,
+        "download_count": 7,
         "created_at": "2025-05-14T12:46:09Z",
         "updated_at": "2025-05-14T12:46:21Z",
         "browser_download_url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Allwinner_OrangePi_3-k6.1.31-AW64-DBAI-all-tunnel.img.gz"
