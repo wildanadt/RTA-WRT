@@ -651,38 +651,60 @@
 
         parseChangelogMD(content) {
             const lines = content.split('\n');
-            let capturing = false; this.changelog = [];
-            // Escape karakter spesial regex dari latestVersion
-            const escapedVersion = this.latestVersion.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const versionRegex = new RegExp(`^##\\s*\\[?v?${escapedVersion}\\]?`, 'i');
-            console.log("parseChangelogMD: Searching for version header matching regex:", versionRegex.source); // Log regex yang digunakan
-
-            for (const line of lines) {
+            let capturing = false;
+            this.changelog = []; // Reset at the start of function
+            
+            // Create a version string that can be more flexible
+            // The issue seems to be with the regex pattern matching
+            const version = this.latestVersion;
+            
+            console.log(`[DEBUG] parseChangelogMD for version: ${version}`);
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
                 const trimmedLine = line.trim();
-                // console.log("parseChangelogMD: Checking line:", trimmedLine); // Log setiap baris (bisa sangat banyak)
-
-                if (versionRegex.test(trimmedLine)) {
-                    capturing = true;
-                    console.log("parseChangelogMD: Found matching version header:", trimmedLine); // Log jika header cocok
-                    continue; // Jangan masukkan baris header itu sendiri ke changelog
-                }
-
-                if (capturing && trimmedLine.startsWith('## ')) { // Akhir dari bagian versi saat ini
-                    console.log("parseChangelogMD: Found next version header, stopping capture for current version.");
-                    break;
-                }
-
-                if (capturing && trimmedLine !== '' && !trimmedLine.startsWith('')) {
-                    this.changelog.push(trimmedLine.replace(/^[-*]\s*/, '')); // Hapus list marker jika ada, karena CSS akan menambahkannya
-                    // console.log("parseChangelogMD: Added to changelog array:", trimmedLine.replace(/^[-*]\s*/, ''));
+                
+                // console.log(`[DEBUG] Processing line ${i + 1}: '${trimmedLine}' | Capturing: ${capturing}`);
+                
+                if (!capturing) {
+                    // Look for the version header in a more flexible way
+                    // Match patterns like: ## [rtawrt-openwrt-24.10.1-21052025] - 2025-05-21
+                    if (trimmedLine.includes(version) && trimmedLine.startsWith('## ')) {
+                        capturing = true;
+                        console.log(`[DEBUG] Found version header: '${trimmedLine}'`);
+                    }
+                } else {
+                    // If already capturing and encounter a new section header, stop
+                    if (trimmedLine.startsWith('## ')) {
+                        console.log(`[DEBUG] Found next section header: '${trimmedLine}'. Stopping capture.`);
+                        break;
+                    }
+                    
+                    // Check if this is a valid line to add
+                    // We want to keep bullet points (- or *) intact in the final output
+                    if (trimmedLine !== '' && !trimmedLine.startsWith('<!--')) {
+                        // For bullet points, keep them as is
+                        if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+                            this.changelog.push(trimmedLine);
+                        } else if (trimmedLine.match(/^\d+\.\s/)) {
+                            // Handle numbered lists
+                            this.changelog.push(trimmedLine);
+                        } else {
+                            // Other content, could be paragraph text or headers
+                            this.changelog.push(trimmedLine);
+                        }
+                        console.log(`[DEBUG] ADDED to changelog: '${trimmedLine}'`);
+                    }
                 }
             }
-
+            
+            console.log(`[DEBUG] AFTER LOOP, this.changelog is: ${JSON.stringify(this.changelog)} | LENGTH: ${this.changelog.length}`);
+            
             if (this.changelog.length === 0) {
-                console.log("parseChangelogMD: No specific entries found, setting default message.");
+                console.log("[DEBUG] No specific entries found, setting default message.");
                 this.changelog = ['- No specific changelog entries found for this version in CHANGELOG.md.'];
             } else {
-                console.log("parseChangelogMD: Final changelog entries for version " + this.latestVersion + ":", this.changelog);
+                console.log(`[DEBUG] Final changelog entries for ${version}: ${JSON.stringify(this.changelog)}`);
             }
         },
 
