@@ -246,7 +246,7 @@ jobs:
     name: Build ${{ matrix.target }} Firmware
     needs: prebuild
     runs-on: ubuntu-22.04
-    continue-on-error: false
+    continue-on-error: true
     env:
       BASE: ${{ needs.prebuild.outputs.base }}
       BRANCH: ${{ needs.prebuild.outputs.branch }}
@@ -642,7 +642,9 @@ jobs:
           if [ ! -s combined_artifacts.txt ]; then
             echo "No artifacts found or empty artifacts file"
             echo "::warning::No firmware artifacts were found to notify about"
-            exit 0
+            exit 1
+          else
+            echo "Artifacts found, proceeding with notification"
           fi
 
           cat combined_artifacts.txt
