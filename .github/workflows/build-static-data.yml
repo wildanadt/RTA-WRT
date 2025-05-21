@@ -44,21 +44,12 @@ jobs:
         run: |
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'actions@github.com'
-          # Tambahkan semua file di dalam direktori output data (misalnya, public/_data)
-          # Sesuaikan path ini dengan OUTPUT_DIR di build-data.js
-          # Jika OUTPUT_DIR adalah 'public/_data', dan 'public' sudah ada di repo dan disajikan:
-          git add public/_data/*.json public/_data/*.md 
-          # Jika OUTPUT_DIR adalah '_data' di root:
-          # git add _data/*.json _data/*.md
 
-          # Hanya commit dan push jika ada perubahan
+          git add data/*.json data/*.md 
+
           if ! git diff --cached --quiet; then
             git commit -m "Automated: Update static firmware data"
             git push
           else
             echo "No changes to commit."
           fi
-        # Hanya jalankan langkah commit jika ada perubahan pada file data.
-        # `git diff --cached --quiet` akan keluar dengan status 0 jika tidak ada perubahan,
-        # dan 1 jika ada perubahan yang di-stage.
-        # `if ! cmd; then` akan menjalankan blok jika cmd keluar dengan status non-zero.
