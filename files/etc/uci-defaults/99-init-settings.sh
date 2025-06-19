@@ -830,45 +830,65 @@ setup_secondary_install() {
 
 # Function to fix ModemManager issues
 fix_modemmanager() {
-  log "STEP" "Fixing ModemManager issues For OpenWrt 24.10..."
+  log "STEP" "Setting up ModemManager fix..."
 
-  if $(grep -q "24.10" /etc/openwrt_release); then
-    log "INFO" "ModemManager fix for OpenWrt 24.10 detected"
-  else
-    log "INFO" "No ModemManager fix needed for this version"
-    return
-  fi
-  
-  # Check if ModemManager is installed
-  if is_package_installed "modemmanager"; then
-    log "INFO" "ModemManager detected, disabling..."
-    
-    # Disable ModemManager service
-    if [ -f "/etc/init.d/modemmanager" ]; then
-      /etc/init.d/modemmanager disable
-      /etc/init.d/modemmanager stop
-      log "INFO" "Disabled ModemManager service"
-    fi
+  # Create init script for ModemManager fix
+  cat > /etc/init.d/modemmanager-fix << 'EOF'
+#!/bin/sh /etc/rc.common
 
-    sleep 2
+START=99
+STOP=15
+USE_PROCD=1
 
-    rm -f /var/run/dbus.pid 2>/dev/null
-    /etc/init.d/dbus restart 2>/dev/null
-    /etc/init.d/modemmanager restart 2>/dev/null
+log() {
+    local type="$1"
+    local message="$2"
+    logger -t "ModemManager-Fix" "[$type] $message"
+}
 
-    # Create Script Startup
-    if [ ! -f "/etc/uci-defaults/01-modemmanager.sh" ]; then
-      echo "#!/bin/sh" > /etc/uci-defaults/01-modemmanager.sh
-      echo "sleep 5" >> /etc/uci-defaults/01-modemmanager.sh
-      echo "rm -f /var/run/dbus.pid" >> /etc/uci-defaults/01-modemmanager.sh
-      echo "/etc/init.d/dbus restart" >> /etc/uci-defaults/01-modemmanager.sh
-      echo "/etc/init.d/modemmanager restart" >> /etc/uci-defaults/01-modemmanager.sh
-      chmod +x /etc/uci-defaults/01-modemmanager.sh
-      log "INFO" "Created ModemManager startup script"
-    fi
-  else
-    log "INFO" "ModemManager not installed, skipping"
-  fi
+is_package_installed() {
+    local package="$1"
+    opkg list-installed | grep -q "^$package "
+    return $?
+}
+
+start_service() {
+    procd_open_instance
+    procd_set_param command /bin/sh -c '
+        # Wait for system to fully boot
+        sleep 5
+
+        if $(grep -q "24.10" /etc/openwrt_release); then
+            logger -t "ModemManager-Fix" "[INFO] ModemManager fix for OpenWrt 24.10 detected"
+            
+            if is_package_installed "modemmanager"; then
+                logger -t "ModemManager-Fix" "[INFO] Applying ModemManager fix..."
+                rm -f /var/run/dbus.pid
+                /etc/init.d/dbus restart
+                /etc/init.d/modemmanager restart
+                logger -t "ModemManager-Fix" "[INFO] ModemManager fix applied"
+            fi
+        fi
+    '
+    procd_set_param respawn
+    procd_close_instance
+}
+
+service_triggers() {
+    procd_add_reload_trigger "modemmanager-fix"
+}
+
+reload_service() {
+    stop
+    start
+}
+EOF
+
+  # Make the init script executable and enable it
+  chmod +x /etc/init.d/modemmanager-fix
+  /etc/init.d/modemmanager-fix enable
+
+  log "INFO" "ModemManager fix init script has been created and enabled"
 }
 
 # Function to complete setup and perform final tasks
