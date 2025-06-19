@@ -34,12 +34,6 @@ init_environment() {
 
 # Apply distribution-specific patches
 apply_distro_patches() {
-    if [ "$VEROP" = "snapshots" ]; then
-        log "INFO" "Applying snapshots-specific patches"
-        # Add specific patches for snapshots if needed
-        patch_signature_check  # Always disable signature check for snapshots
-    fi
-
     case "${BASE}" in
         openwrt)
             log "INFO" "Applying OpenWrt-specific patches"
