@@ -530,8 +530,14 @@ download_packages() {
             fi
             
             rm -f "$temp_response"
+
+            # First try exact match for either extension
+            download_url=$(echo "$file_urls" | grep -E "${filename}[._-].*\.(ipk|apk)$" | sort -V | tail -1)
             
-            download_url=$(echo "$file_urls" | grep -E '\.(ipk|apk)$' | grep -i "$filename" | sort -V | tail -1)
+            # If no exact match, try looser matching
+            if [ -z "$download_url" ]; then
+                download_url=$(echo "$file_urls" | grep -E "\.(ipk|apk)$" | grep -i "$filename" | sort -V | tail -1)
+            fi
             
             if [ -z "$download_url" ]; then
                 log "WARNING" "No matching package found for $filename in GitHub assets"
@@ -554,9 +560,11 @@ download_packages() {
             fi
             
             local patterns=(
-                "${filename}[^\"]*\.(ipk|apk)"
-                "${filename}_.*\.(ipk|apk)"
-                "${filename}.*\.(ipk|apk)"
+                "${filename}[._-][^\"]*\.(ipk|apk)"  # More precise version matching
+                "${filename}[^\"]*\.(ipk|apk)"       # Looser matching
+                "${filename}_.*\.(ipk|apk)"          # Underscore separator
+                "${filename}-.*\.(ipk|apk)"          # Dash separator
+                "${filename}.*\.(ipk|apk)"           # Fallback
             )
             
             for pattern in "${patterns[@]}"; do
