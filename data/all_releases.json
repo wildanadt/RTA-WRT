@@ -37,8 +37,7 @@
     "assets": [],
     "tarball_url": "https://api.github.com/repos/rizkikotet-dev/RTA-WRT/tarball/rtawrt-openwrt-snapshots-19062025",
     "zipball_url": "https://api.github.com/repos/rizkikotet-dev/RTA-WRT/zipball/rtawrt-openwrt-snapshots-19062025",
-    "body": "# 🚀 RTA-WRT - Release Information\n\n## 📥 Download Statistics\n![GitHub Downloads](https://img.shields.io/github/downloads/rizkikotet-dev/RTA-WRT/rtawrt-openwrt-snapshots-19062025/total?style=for-the-badge&logo=Openwrt)\n\n## 📢 Support Channels\n[![Channel](https://img.shields.io/badge/Telegram-Channel-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/rtawrt)\n[![Group](https://img.shields.io/badge/Telegram-Group-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/backup_rtawrt)\n[![Personal](https://img.shields.io/badge/Telegram-Personal-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/RizkiKotet)\n\n## NOTES\n`Amlogic s905x Support Mod SDCard`\n\n## 📝 Changelog Firmware\n[**Changelog Firmware**](https://github.com/rizkikotet-dev/RTA-WRT/blob/dev/CHANGELOG.md \"**Changelog Firmware**\")\n\n\n## What's Changed\n* Dev by @rizkikotet-dev in https://github.com/rizkikotet-dev/RTA-WRT/pull/84\n* Dev by @rizkikotet-dev in https://github.com/rizkikotet-dev/RTA-WRT/pull/85\n\n\n**Full Changelog**: https://github.com/rizkikotet-dev/RTA-WRT/compare/rtawrt-openwrt-24.10.1-20052025...rtawrt-openwrt-snapshots-19062025",
-    "mentions_count": 1
+    "body": "# 🚀 RTA-WRT - Release Information\n\n## 📥 Download Statistics\n![GitHub Downloads](https://img.shields.io/github/downloads/rizkikotet-dev/RTA-WRT/rtawrt-openwrt-snapshots-19062025/total?style=for-the-badge&logo=Openwrt)\n\n## 📢 Support Channels\n[![Channel](https://img.shields.io/badge/Telegram-Channel-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/rtawrt)\n[![Group](https://img.shields.io/badge/Telegram-Group-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/backup_rtawrt)\n[![Personal](https://img.shields.io/badge/Telegram-Personal-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/RizkiKotet)\n\n## NOTES\n`Amlogic s905x Support Mod SDCard`\n\n## 📝 Changelog Firmware\n[**Changelog Firmware**](https://github.com/rizkikotet-dev/RTA-WRT/blob/dev/CHANGELOG.md \"**Changelog Firmware**\")\n"
   },
   {
     "url": "https://api.github.com/repos/rizkikotet-dev/RTA-WRT/releases/219884793",
@@ -9523,7 +9522,7 @@
         "state": "uploaded",
         "size": 399978078,
         "digest": null,
-        "download_count": 31,
+        "download_count": 32,
         "created_at": "2025-04-29T05:58:49Z",
         "updated_at": "2025-04-29T05:59:00Z",
         "browser_download_url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-29042025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x-Mod_SDCard-HG680P-k5.15.180-all-tunnel-all-tunnel.img.gz"
