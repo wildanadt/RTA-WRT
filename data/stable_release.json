@@ -1001,7 +1001,7 @@
       "state": "uploaded",
       "size": 402478276,
       "digest": null,
-      "download_count": 43,
+      "download_count": 44,
       "created_at": "2025-05-14T12:48:14Z",
       "updated_at": "2025-05-14T12:48:28Z",
       "browser_download_url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x-B860H_v1-v2-NONMOD-k6.1.138-all-tunnel.img.gz"
