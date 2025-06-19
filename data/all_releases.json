@@ -4076,7 +4076,7 @@
         "state": "uploaded",
         "size": 404893304,
         "digest": null,
-        "download_count": 26,
+        "download_count": 27,
         "created_at": "2025-05-14T12:48:14Z",
         "updated_at": "2025-05-14T12:48:26Z",
         "browser_download_url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x-Mod_SDCard-B860H_v1-v2-k6.1.138-all-tunnel-all-tunnel.img.gz"
@@ -19309,7 +19309,7 @@
     ],
     "tarball_url": "https://api.github.com/repos/rizkikotet-dev/RTA-WRT/tarball/rtawrt-openwrt-24.10.0-10032025",
     "zipball_url": "https://api.github.com/repos/rizkikotet-dev/RTA-WRT/zipball/rtawrt-openwrt-24.10.0-10032025",
-    "body": "# 🚀 RTA-WRT - Release Information\n\n## 📥 Download Statistics\n![GitHub Downloads](https://img.shields.io/github/downloads/rizkikotet-dev/RTA-WRT/rtawrt-openwrt-24.10.0-10032025/total?style=for-the-badge&logo=Openwrt)\n\n## �� Support Channels\n[![Channel](https://img.shields.io/badge/Telegram-Channel-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/rtawrt)\n[![Group](https://img.shields.io/badge/Telegram-Group-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/backup_rtawrt)\n[![Personal](https://img.shields.io/badge/Telegram-Personal-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/RizkiKotet)\n\n## NOTES\n`Amlogic s905x Support Mod SDCard`\n\n## 📝 Changelog Firmware\n[**Changelog Firmware**](https://github.com/rizkikotet-dev/RTA-WRT/blob/dev/CHANGELOG.md \"**Changelog Firmware**\")\n"
+    "body": "# 🚀 RTA-WRT - Release Information\n\n## 📥 Download Statistics\n![GitHub Downloads](https://img.shields.io/github/downloads/rizkikotet-dev/RTA-WRT/rtawrt-openwrt-24.10.0-10032025/total?style=for-the-badge&logo=Openwrt)\n\n## 📢 Support Channels\n[![Channel](https://img.shields.io/badge/Telegram-Channel-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/rtawrt)\n[![Group](https://img.shields.io/badge/Telegram-Group-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/backup_rtawrt)\n[![Personal](https://img.shields.io/badge/Telegram-Personal-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/RizkiKotet)\n\n## NOTES\n`Amlogic s905x Support Mod SDCard`\n\n## 📝 Changelog Firmware\n[**Changelog Firmware**](https://github.com/rizkikotet-dev/RTA-WRT/blob/dev/CHANGELOG.md \"**Changelog Firmware**\")\n"
   },
   {
     "url": "https://api.github.com/repos/rizkikotet-dev/RTA-WRT/releases/207818778",
