@@ -1,5 +1,8 @@
 # Changelog
 
+## [rtawrt-openwrt-24.10.1-19062025] - 2025-06-19
+- Add Auto Fix ModemManager
+
 ## [rtawrt-openwrt-24.10.1-21052025] - 2025-05-21
 - Fix WiFi stability issues on HG680P devices
 - Enhance Netmonitor with real-time bandwidth graphs
