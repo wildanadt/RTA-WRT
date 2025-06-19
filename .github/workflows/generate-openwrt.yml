@@ -479,7 +479,8 @@ jobs:
         run: |
           # Get the image builder filename pattern based on base and version
           if [ "${VEROP}" = "snapshots" ]; then
-            RELEASE="${DOWNLOAD_BASE}/targets/${TARGET_SYSTEM}/${BASE}-imagebuilder-${TARGET_NAME}.Linux-x86_64.tar.xz"
+            RELEASE="${DOWNLOAD_BASE}/targets/${TARGET_SYSTEM}/${BASE}-imagebuilder-${TARGET_NAME}.Linux-x86_64.tar.zst"
+            archive_ext="tar.zst"
           else
             # Determine archive extension based on version
             CURVER=$(echo "${BRANCH}" | cut -d'.' -f1)
@@ -489,7 +490,7 @@ jobs:
 
           echo "Downloading from: $RELEASE"
           wget -q --show-progress --progress=bar:force:noscroll "$RELEASE" || {
-            echo "Error: Failed to download ImageBuilder"
+            echo "Error: Failed to download ImageBuilder from: $RELEASE"
             exit 1
           }
 
@@ -500,6 +501,7 @@ jobs:
             tar --use-compress-program=unzstd -xf *imagebuilder*.tar.zst && rm -f *imagebuilder*.tar.zst
           else
             echo "Error: No valid ImageBuilder archive found"
+            ls -la
             exit 1
           fi
 
