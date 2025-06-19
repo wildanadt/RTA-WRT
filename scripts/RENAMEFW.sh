@@ -23,7 +23,18 @@ rename_firmware() {
 
     # Change to firmware directory
     cd "${firmware_dir}" || error_msg "Failed to change directory to ${firmware_dir}"
+    
+    # Handle snapshots version naming
+    local version_suffix
+    if [ "$VEROP" = "snapshots" ]; then
+        version_suffix="-SNAPSHOT-$(date +%Y%m%d)"
+    else
+        version_suffix="-v${BRANCH}"
+    fi
 
+    # Add basic information to filename
+    local base_info="-${BASE^^}"
+    
     # Search and replace patterns
     local search_replace_patterns=(
         # Format: "search|replace"

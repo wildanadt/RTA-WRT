@@ -11,8 +11,10 @@ on:
         options:
           - openwrt:24.10.1
           - openwrt:23.05.5
+          - openwrt:snapshots
           - immortalwrt:24.10.1
           - immortalwrt:23.05.4
+          - immortalwrt:snapshots
       target:
         description: "Select device board"
         required: false
@@ -187,12 +189,19 @@ jobs:
 
           BASE="${RELEASE_BRANCH%:*}"
           BRANCH="${RELEASE_BRANCH#*:}"
-          VEROP="$(echo "${BRANCH}" | awk -F. '{print $1"."$2}')"
+          
+          if [ "$BRANCH" = "snapshots" ]; then
+            VEROP="snapshots"
+            DOWNLOAD_BASE="https://downloads.${BASE}.org/snapshots"
+          else
+            VEROP="$(echo "${BRANCH}" | awk -F. '{print $1"."$2}')"
+            DOWNLOAD_BASE="https://downloads.${BASE}.org/releases"
+          fi
 
           echo "BASE=$BASE" >> $GITHUB_OUTPUT
           echo "BRANCH=$BRANCH" >> $GITHUB_OUTPUT
           echo "VEROP=$VEROP" >> $GITHUB_OUTPUT
-          echo "DOWNLOAD_BASE=https://downloads.${BASE}.org" >> $GITHUB_OUTPUT
+          echo "DOWNLOAD_BASE=$DOWNLOAD_BASE" >> $GITHUB_OUTPUT
 
           DATE=$(date +'%d%m%Y')
           DATETIME=$(date +'%d.%m.%Y-%H:%M:%S')
@@ -468,24 +477,31 @@ jobs:
         id: download
         if: steps.variables.outputs.status == 'success'
         run: |
-          # Determine archive extension based on version
-          CURVER=$(echo "${BRANCH}" | cut -d'.' -f1)
-          archive_ext=$([ "${CURVER}" == "24" ] && echo "tar.zst" || echo "tar.xz")
+          # Get the image builder filename pattern based on base and version
+          if [ "${VEROP}" = "snapshots" ]; then
+            RELEASE="${DOWNLOAD_BASE}/targets/${TARGET_SYSTEM}/${BASE}-imagebuilder-${TARGET_NAME}.Linux-x86_64.tar.xz"
+          else
+            # Determine archive extension based on version
+            CURVER=$(echo "${BRANCH}" | cut -d'.' -f1)
+            archive_ext=$([ "${CURVER}" -ge "24" ] && echo "tar.zst" || echo "tar.xz")
+            RELEASE="${DOWNLOAD_BASE}/targets/${TARGET_SYSTEM}/${BASE}-imagebuilder-${BRANCH}-${TARGET_NAME}.Linux-x86_64.${archive_ext}"
+          fi
 
-          # Download image builder
-          RELEASE="${DOWNLOAD_BASE}/releases/${BRANCH}/targets/${TARGET_SYSTEM}/${BASE}-imagebuilder-${BRANCH}-${TARGET_NAME}.Linux-x86_64.${archive_ext}"
           echo "Downloading from: $RELEASE"
-          wget --progress=dot:giga "$RELEASE"
+          wget -q --show-progress --progress=bar:force:noscroll "$RELEASE" || {
+            echo "Error: Failed to download ImageBuilder"
+            exit 1
+          }
 
-          # Extract archive based on extension
-          case "${archive_ext}" in
-            tar.xz)
-              tar -xJf *-imagebuilder-* && rm -f *-imagebuilder-*.tar.xz
-              ;;
-            tar.zst)
-              tar --use-compress-program=unzstd -xf *-imagebuilder-* && rm -f *-imagebuilder-*.tar.zst
-              ;;
-          esac
+          # Extract archive based on file type
+          if [ -f *imagebuilder*.tar.xz ]; then
+            tar -xJf *imagebuilder*.tar.xz && rm -f *imagebuilder*.tar.xz
+          elif [ -f *imagebuilder*.tar.zst ]; then
+            tar --use-compress-program=unzstd -xf *imagebuilder*.tar.zst && rm -f *imagebuilder*.tar.zst
+          else
+            echo "Error: No valid ImageBuilder archive found"
+            exit 1
+          fi
 
           # Setup working directory
           mv *-imagebuilder-* ${WORKING_DIR}

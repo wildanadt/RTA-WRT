@@ -17,19 +17,44 @@ init_environment() {
     log "INFO" "Starting builder patch..."
     log "INFO" "Current path: $PWD"
 
-    cd "${GITHUB_WORKSPACE}/${WORKING_DIR}" || error "Failed to change directory to ${GITHUB_WORKSPACE}/${WORKING_DIR}"
+    # Set GITHUB_WORKSPACE to current directory if not set (for local builds)
+    GITHUB_WORKSPACE="${GITHUB_WORKSPACE:-$(pwd)}"
+    WORKING_DIR="${WORKING_DIR:-imagebuilder}"
+    
+    local target_dir="${GITHUB_WORKSPACE}/${WORKING_DIR}"
+    
+    if [ ! -d "$target_dir" ]; then
+        log "INFO" "Creating directory: $target_dir"
+        mkdir -p "$target_dir"
+    fi
+    
+    cd "$target_dir" || error "Failed to change directory to $target_dir"
+    log "INFO" "Changed to directory: $target_dir"
 }
 
 # Apply distribution-specific patches
 apply_distro_patches() {
+    if [ "$VEROP" = "snapshots" ]; then
+        log "INFO" "Applying snapshots-specific patches"
+        # Add specific patches for snapshots if needed
+        patch_signature_check  # Always disable signature check for snapshots
+    fi
+
     case "${BASE}" in
         openwrt)
             log "INFO" "Applying OpenWrt-specific patches"
+            if [ "$VEROP" = "snapshots" ]; then
+                log "INFO" "Applying OpenWrt snapshots patches"
+            fi
             ;;
         immortalwrt)
             log "INFO" "Applying ImmortalWrt-specific patches"
-            log "INFO" "Removing default package: luci-app-cpufreq"
-            sed -i "/luci-app-cpufreq/d" include/target.mk
+            if [ "$VEROP" = "snapshots" ]; then
+                log "INFO" "Applying ImmortalWrt snapshots patches"
+            else
+                log "INFO" "Removing default package: luci-app-cpufreq"
+                sed -i "/luci-app-cpufreq/d" include/target.mk
+            fi
             ;;
         *)
             log "WARN" "Unknown distribution: ${BASE}, skipping specific patches"

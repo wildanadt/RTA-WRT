@@ -74,14 +74,59 @@ log() {
     esac
 }
 
+# Function to check if building snapshots
+is_snapshots() {
+    [ "$VEROP" = "snapshots" ]
+    return $?
+}
+
+# Function to get proper version string
+get_version_string() {
+    if is_snapshots; then
+        echo "snapshots-$(date +%Y%m%d)"
+    else
+        echo "$BRANCH"
+    fi
+}
+
+# Function to get proper download URL
+get_download_url() {
+    local base="$1"
+    local path="$2"
+    
+    if is_snapshots; then
+        echo "https://downloads.${base}.org/snapshots/${path}"
+    else
+        echo "https://downloads.${base}.org/releases/${path}"
+    fi
+}
+
+# Function to validate snapshots compatibility
+validate_snapshots_config() {
+    if is_snapshots; then
+        log "INFO" "Validating snapshots configuration..."
+        # Add any specific validation for snapshots builds
+        if [ -n "${TUNNEL}" ] && [ "${TUNNEL}" != "no-tunnel" ]; then
+            log "WARNING" "Some tunnel packages might not be available in snapshots"
+        fi
+    fi
+}
+
+# Enhanced error handling for snapshots
 error_msg() {
-    local line_number=${2:-${BASH_LINENO[0]}}
-    echo -e "${ERROR} ${1} (Line: ${line_number})" >&2
-    echo "Call stack:" >&2
-    local frame=0
-    while caller $frame; do
-        ((frame++))
-    done >&2
+    local message="$1"
+    local line="${2:-}"
+    
+    if is_snapshots; then
+        message="[SNAPSHOTS BUILD] $message"
+    fi
+    
+    if [ -n "$line" ]; then
+        echo -e "${ERROR} ${message} (line: ${line})" >&2
+    else
+        echo -e "${ERROR} ${message}" >&2
+    fi
+    
     exit 1
 }
 

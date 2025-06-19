@@ -23,13 +23,28 @@ setup_base_config() {
     # Update date in init settings
     sed -i "s/Ouc3kNF6/${DATE}/g" files/etc/uci-defaults/99-init-settings.sh
 
+    # Handle version-specific configurations
+    if [ "$VEROP" = "snapshots" ]; then
+        log "INFO" "Applying snapshots-specific configuration"
+        # Add snapshots warning to login page
+        echo "Snapshot builds are development versions. Use with caution." > files/etc/banner.snapshot
+        sed -i '/# setup misc settings/ a\cat /etc/banner.snapshot >> /etc/banner' files/etc/uci-defaults/99-init-settings.sh
+    fi
+
     case "${BASE}" in
         openwrt)
             log "INFO" "Applying OpenWrt-specific configuration"
-            sed -i '/# setup misc settings/ a\mv \/www\/luci-static\/resources\/view\/status\/include\/29_temp.js \/www\/luci-static\/resources\/view\/status\/include\/17_temp.js' files/etc/uci-defaults/99-init-settings.sh
+            if [ "$VEROP" = "snapshots" ]; then
+                log "INFO" "Applying OpenWrt snapshots configuration"
+            else
+                sed -i '/# setup misc settings/ a\mv \/www\/luci-static\/resources\/view\/status\/include\/29_temp.js \/www\/luci-static\/resources\/view\/status\/include\/17_temp.js' files/etc/uci-defaults/99-init-settings.sh
+            fi
             ;;
         immortalwrt)
             log "INFO" "Applying ImmortalWrt-specific configuration"
+            if [ "$VEROP" = "snapshots" ]; then
+                log "INFO" "Applying ImmortalWrt snapshots configuration"
+            fi
             ;;
         *)
             log "WARN" "Unknown base system: ${BASE}"

@@ -15,14 +15,25 @@ set -o pipefail # Exit if any command in a pipe fails
 # Define repositories with proper quoting and error handling
 declare -A REPOS
 initialize_repositories() {
-    local version="24.10"
-    REPOS=(
-        ["KIDDIN9"]="https://dl.openwrt.ai/releases/${version}/packages/${ARCH_3}/kiddin9"
-        ["IMMORTALWRT"]="https://downloads.immortalwrt.org/releases/packages-${version}/${ARCH_3}"
-        ["OPENWRT"]="https://downloads.openwrt.org/releases/packages-${version}/${ARCH_3}"
-        ["GSPOTX2F"]="https://github.com/gSpotx2f/packages-openwrt/raw/refs/heads/master/current"
-        ["FANTASTIC"]="https://fantastic-packages.github.io/packages/releases/${VEROP}/packages/mipsel_24kc"
-    )
+    local version
+    if [ "$VEROP" = "snapshots" ]; then
+        REPOS=(
+            ["KIDDIN9"]="https://dl.openwrt.ai/snapshots/packages/${ARCH_3}/kiddin9"
+            ["IMMORTALWRT"]="https://downloads.immortalwrt.org/snapshots/packages/${ARCH_3}"
+            ["OPENWRT"]="https://downloads.openwrt.org/snapshots/packages/${ARCH_3}"
+            ["GSPOTX2F"]="https://github.com/gSpotx2f/packages-openwrt/tree/refs/heads/master/snapshot"
+            ["FANTASTIC"]="https://fantastic-packages.github.io/packages/SNAPSHOT/packages/mipsel_24kc"
+        )
+    else
+        version="${VEROP}"
+        REPOS=(
+            ["KIDDIN9"]="https://dl.openwrt.ai/releases/${version}/packages/${ARCH_3}/kiddin9"
+            ["IMMORTALWRT"]="https://downloads.immortalwrt.org/releases/packages-${version}/${ARCH_3}"
+            ["OPENWRT"]="https://downloads.openwrt.org/releases/packages-${version}/${ARCH_3}"
+            ["GSPOTX2F"]="https://github.com/gSpotx2f/packages-openwrt/raw/refs/heads/master/current"
+            ["FANTASTIC"]="https://fantastic-packages.github.io/packages/releases/${version}/packages/mipsel_24kc"
+        )
+    fi
 }
 
 # Define package categories with improved structure
