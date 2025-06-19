@@ -532,11 +532,11 @@ download_packages() {
             rm -f "$temp_response"
 
             # First try exact match for either extension
-            download_url=$(echo "$file_urls" | grep -E "${filename}[._-].*\.(ipk|apk)$" | sort -V | tail -1)
+            download_url=$(echo "$file_urls" | grep -E "${filename}[._-].*\.(apk)$" | sort -V | tail -1)
             
             # If no exact match, try looser matching
             if [ -z "$download_url" ]; then
-                download_url=$(echo "$file_urls" | grep -E "\.(ipk|apk)$" | grep -i "$filename" | sort -V | tail -1)
+                download_url=$(echo "$file_urls" | grep -E "\.(apk)$" | grep -i "$filename" | sort -V | tail -1)
             fi
             
             if [ -z "$download_url" ]; then
@@ -560,11 +560,11 @@ download_packages() {
             fi
             
             local patterns=(
-                "${filename}[._-][^\"]*\.(ipk|apk)"  # More precise version matching
-                "${filename}[^\"]*\.(ipk|apk)"       # Looser matching
-                "${filename}_.*\.(ipk|apk)"          # Underscore separator
-                "${filename}-.*\.(ipk|apk)"          # Dash separator
-                "${filename}.*\.(ipk|apk)"           # Fallback
+                "${filename}[._-][^\"]*\.(apk)"  # More precise version matching
+                "${filename}[^\"]*\.(apk)"       # Looser matching
+                "${filename}_.*\.(apk)"          # Underscore separator
+                "${filename}-.*\.(apk)"          # Dash separator
+                "${filename}.*\.(apk)"           # Fallback
             )
             
             for pattern in "${patterns[@]}"; do
