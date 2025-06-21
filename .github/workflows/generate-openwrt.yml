@@ -215,10 +215,10 @@ jobs:
             BASE="lede"
             if [ "$BRANCH" = "snapshots" ]; then
               VEROP="snapshots"
-              DOWNLOAD_BASE="https://downloads.lede-project.org/snapshots"
+              DOWNLOAD_BASE="https://mirrors.tencent.com/lede/snapshots"
             else
               VEROP="$(echo "${BRANCH}" | awk -F. '{print $1"."$2}')"
-              DOWNLOAD_BASE="https://downloads.lede-project.org/releases"
+              DOWNLOAD_BASE="https://mirrors.tencent.com/lede/releases"
             fi
           else
             echo "Error: Unsupported base branch '$BASE'. Supported bases are: openwrt, immortalwrt, lede."
