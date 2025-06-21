@@ -243,11 +243,19 @@ jobs:
             RELEASE_TAG="rtawrt-openwrt-${BRANCH}-${DATE}"
             echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
             echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_OUTPUT
-          else
+          elif [ "${BASE}" == "immortalwrt" ]; then
             RELEASE_NAME="RTA-WRT-ImmortalWRT-${BRANCH}-${DATE}"
             RELEASE_TAG="rtawrt-immortalwrt-${BRANCH}-${DATE}"
             echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
             echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          elif [ "${BASE}" == "lede" ]; then
+            RELEASE_NAME="RTA-WRT-LEDE-${BRANCH}-${DATE}"
+            RELEASE_TAG="rtawrt-lede-${BRANCH}-${DATE}"
+            echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
+            echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          else
+            echo "Error: Unsupported base branch '$BASE'. Supported bases are: openwrt, immortalwrt, lede."
+            exit 1
           fi
           echo "status=success" >> $GITHUB_OUTPUT
 
