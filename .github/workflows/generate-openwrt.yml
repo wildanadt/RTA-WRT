@@ -344,6 +344,7 @@ jobs:
           case $BASE in
             openwrt)     OP_BASE="OpenWrt" ;;
             immortalwrt) OP_BASE="ImmortalWrt" ;;
+            lede)       OP_BASE="LEDE" ;;
           esac
           echo "OP_BASE=$OP_BASE" >> $GITHUB_ENV
 
@@ -514,13 +515,34 @@ jobs:
         run: |
           # Get the image builder filename pattern based on base and version
           if [ "${VEROP}" = "snapshots" ]; then
-            RELEASE="${DOWNLOAD_BASE}/targets/${TARGET_SYSTEM}/${BASE}-imagebuilder-${TARGET_NAME}.Linux-x86_64.tar.zst"
-            archive_ext="tar.zst"
+            if [ "${BASE}" = "openwrt" ]; then
+              RELEASE="${DOWNLOAD_BASE}/targets/${TARGET_SYSTEM}/openwrt-imagebuilder-${TARGET_NAME}.Linux-x86_64.tar.zst"
+            elif [ "${BASE}" = "immortalwrt" ]; then
+              RELEASE="${DOWNLOAD_BASE}/targets/${TARGET_SYSTEM}/immortalwrt-imagebuilder-${TARGET_NAME}.Linux-x86_64.tar.zst"
+            elif [ "${BASE}" = "lede" ]; then
+              RELEASE="${DOWNLOAD_BASE}/targets/${TARGET_SYSTEM}/openwrt-imagebuilder-${TARGET_NAME}.Linux-x86_64.tar.zst"
+            else
+              echo "Error: Unsupported base branch '$BASE'. Supported bases are: openwrt, immortalwrt, lede."
+              exit 1
+            fi
           else
             # Determine archive extension based on version
-            CURVER=$(echo "${BRANCH}" | cut -d'.' -f1)
-            archive_ext=$([ "${CURVER}" -ge "24" ] && echo "tar.zst" || echo "tar.xz")
-            RELEASE="${DOWNLOAD_BASE}/targets/${TARGET_SYSTEM}/${BASE}-imagebuilder-${BRANCH}-${TARGET_NAME}.Linux-x86_64.${archive_ext}"
+            if [ "${BASE}" = "openwrt" ]; then
+              CURVER=$(echo "${BRANCH}" | cut -d'.' -f1)
+              archive_ext=$([ "${CURVER}" -ge "24" ] && echo "tar.zst" || echo "tar.xz")
+              RELEASE="${DOWNLOAD_BASE}/${BRANCH}/targets/${TARGET_SYSTEM}/openwrt-imagebuilder-${BRANCH}-${TARGET_NAME}.Linux-x86_64.${archive_ext}"
+            elif [ "${BASE}" = "immortalwrt" ]; then
+              CURVER=$(echo "${BRANCH}" | cut -d'.' -f1)
+              archive_ext=$([ "${CURVER}" -ge "24" ] && echo "tar.zst" || echo "tar.xz")
+              RELEASE="${DOWNLOAD_BASE}/${BRANCH}/targets/${TARGET_SYSTEM}/immortalwrt-imagebuilder-${BRANCH}-${TARGET_NAME}.Linux-x86_64.${archive_ext}"
+            elif [ "${BASE}" = "lede" ]; then
+              CURVER=$(echo "${BRANCH}" | cut -d'.' -f1)
+              archive_ext=$([ "${CURVER}" -ge "24" ] && echo "tar.zst" || echo "tar.xz")
+              RELEASE="${DOWNLOAD_BASE}/${BRANCH}/targets/${TARGET_SYSTEM}/openwrt-imagebuilder-${BRANCH}-${TARGET_NAME}.Linux-x86_64.${archive_ext}"
+            else
+              echo "Error: Unsupported base branch '$BASE'. Supported bases are: openwrt, immortalwrt, lede."
+              exit 1
+            fi
           fi
 
           echo "Downloading from: $RELEASE"
