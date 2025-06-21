@@ -15,6 +15,9 @@ on:
           - immortalwrt:24.10.1
           - immortalwrt:23.05.4
           - immortalwrt:snapshots
+          - lede:24.10.1
+          - lede:23.05.5
+          - lede:snapshots
       target:
         description: "Select device board"
         required: false
@@ -189,13 +192,37 @@ jobs:
 
           BASE="${RELEASE_BRANCH%:*}"
           BRANCH="${RELEASE_BRANCH#*:}"
-          
-          if [ "$BRANCH" = "snapshots" ]; then
-            VEROP="snapshots"
-            DOWNLOAD_BASE="https://downloads.${BASE}.org/snapshots"
+
+          if [ "$BASE" = "openwrt" ]; then
+            BASE="openwrt"
+            if [ "$BRANCH" = "snapshots" ]; then
+              VEROP="snapshots"
+              DOWNLOAD_BASE="https://downloads.openwrt.org/snapshots"
+            else
+              VEROP="$(echo "${BRANCH}" | awk -F. '{print $1"."$2}')"
+              DOWNLOAD_BASE="https://downloads.openwrt.org/releases"
+            fi
+          elif [ "$BASE" = "immortalwrt" ]; then
+            BASE="immortalwrt"
+            if [ "$BRANCH" = "snapshots" ]; then
+              VEROP="snapshots"
+              DOWNLOAD_BASE="https://immortalwrt.org/releases/snapshots"
+            else
+              VEROP="$(echo "${BRANCH}" | awk -F. '{print $1"."$2}')"
+              DOWNLOAD_BASE="https://immortalwrt.org/releases"
+            fi
+          elif [ "$BASE" = "lede" ]; then
+            BASE="lede"
+            if [ "$BRANCH" = "snapshots" ]; then
+              VEROP="snapshots"
+              DOWNLOAD_BASE="https://downloads.lede-project.org/snapshots"
+            else
+              VEROP="$(echo "${BRANCH}" | awk -F. '{print $1"."$2}')"
+              DOWNLOAD_BASE="https://downloads.lede-project.org/releases"
+            fi
           else
-            VEROP="$(echo "${BRANCH}" | awk -F. '{print $1"."$2}')"
-            DOWNLOAD_BASE="https://downloads.${BASE}.org/releases"
+            echo "Error: Unsupported base branch '$BASE'. Supported bases are: openwrt, immortalwrt, lede."
+            exit 1
           fi
 
           echo "BASE=$BASE" >> $GITHUB_OUTPUT

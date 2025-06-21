@@ -59,7 +59,12 @@ apply_distro_patches() {
 # Patch package signature checking
 patch_signature_check() {
     log "INFO" "Disabling package signature checking in repositories.conf"
-    sed -i '\|option check_signature| s|^|#|' repositories.conf
+    if [[ ! -f "repositories.conf" ]]; then
+        log "WARN" "repositories.conf not found, skipping patching"
+    else
+        log "INFO" "Found repositories.conf, proceeding with patching"
+        sed -i '\|option check_signature| s|^|#|' repositories.conf
+    fi
 }
 
 # Patch Makefile for package installation
