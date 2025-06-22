@@ -77,8 +77,7 @@
     "assets": [],
     "tarball_url": "https://api.github.com/repos/rizkikotet-dev/RTA-WRT/tarball/rtawrt-lede-24.10.1-22062025",
     "zipball_url": "https://api.github.com/repos/rizkikotet-dev/RTA-WRT/zipball/rtawrt-lede-24.10.1-22062025",
-    "body": "# 🚀 RTA-WRT - Release Information\n\n## 📥 Download Statistics\n![GitHub Downloads](https://img.shields.io/github/downloads/rizkikotet-dev/RTA-WRT/rtawrt-lede-24.10.1-22062025/total?style=for-the-badge&logo=Openwrt)\n\n## 📢 Support Channels\n[![Channel](https://img.shields.io/badge/Telegram-Channel-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/rtawrt)\n[![Group](https://img.shields.io/badge/Telegram-Group-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/backup_rtawrt)\n[![Personal](https://img.shields.io/badge/Telegram-Personal-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/RizkiKotet)\n\n## NOTES\n`Amlogic s905x Support Mod SDCard`\n\n## 📝 Changelog Firmware\n[**Changelog Firmware**](https://github.com/rizkikotet-dev/RTA-WRT/blob/dev/CHANGELOG.md \"**Changelog Firmware**\")\n\n\n## What's Changed\n* Dev by @rizkikotet-dev in https://github.com/rizkikotet-dev/RTA-WRT/pull/84\n* Dev by @rizkikotet-dev in https://github.com/rizkikotet-dev/RTA-WRT/pull/85\n\n\n**Full Changelog**: https://github.com/rizkikotet-dev/RTA-WRT/compare/rtawrt-openwrt-24.10.1-20052025...rtawrt-lede-24.10.1-22062025",
-    "mentions_count": 1
+    "body": "# 🚀 RTA-WRT - Release Information\n\n## 📥 Download Statistics\n![GitHub Downloads](https://img.shields.io/github/downloads/rizkikotet-dev/RTA-WRT/rtawrt-lede-24.10.1-22062025/total?style=for-the-badge&logo=Openwrt)\n\n## 📢 Support Channels\n[![Channel](https://img.shields.io/badge/Telegram-Channel-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/rtawrt)\n[![Group](https://img.shields.io/badge/Telegram-Group-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/backup_rtawrt)\n[![Personal](https://img.shields.io/badge/Telegram-Personal-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/RizkiKotet)\n\n## NOTES\n`Amlogic s905x Support Mod SDCard`\n\n## 📝 Changelog Firmware\n[**Changelog Firmware**](https://github.com/rizkikotet-dev/RTA-WRT/blob/dev/CHANGELOG.md \"**Changelog Firmware**\")\n"
   },
   {
     "url": "https://api.github.com/repos/rizkikotet-dev/RTA-WRT/releases/226400476",
@@ -1344,7 +1343,7 @@
         "state": "uploaded",
         "size": 412826612,
         "digest": null,
-        "download_count": 32,
+        "download_count": 33,
         "created_at": "2025-05-21T02:35:53Z",
         "updated_at": "2025-05-21T02:36:05Z",
         "browser_download_url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-24.10.1-21052025/RTA-WRT-OpenWrt-24.10.1-Amlogic_s905x-Mod_SDCard-B860H_v1-v2-k6.1.66-DBAI-all-tunnel-all-tunnel.img.gz"
@@ -3154,7 +3153,7 @@
         "state": "uploaded",
         "size": 468506777,
         "digest": null,
-        "download_count": 20,
+        "download_count": 23,
         "created_at": "2025-05-14T12:46:09Z",
         "updated_at": "2025-05-14T12:46:21Z",
         "browser_download_url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Allwinner_OrangePi_3-k6.1.31-AW64-DBAI-all-tunnel.img.gz"
@@ -3874,7 +3873,7 @@
         "state": "uploaded",
         "size": 398530372,
         "digest": null,
-        "download_count": 0,
+        "download_count": 1,
         "created_at": "2025-05-14T13:02:20Z",
         "updated_at": "2025-05-14T13:02:37Z",
         "browser_download_url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905w-X96W-k5.15.182-all-tunnel.img.gz"
@@ -4126,7 +4125,7 @@
         "state": "uploaded",
         "size": 402488806,
         "digest": null,
-        "download_count": 61,
+        "download_count": 63,
         "created_at": "2025-05-14T13:09:39Z",
         "updated_at": "2025-05-14T13:10:04Z",
         "browser_download_url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x-HG680P-NONMOD-k6.1.138-all-tunnel.img.gz"
@@ -4306,7 +4305,7 @@
         "state": "uploaded",
         "size": 404900478,
         "digest": null,
-        "download_count": 29,
+        "download_count": 30,
         "created_at": "2025-05-14T13:09:39Z",
         "updated_at": "2025-05-14T13:09:52Z",
         "browser_download_url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-23.05.5-14052025/RTA-WRT-OpenWrt-23.05.5-Amlogic_s905x-Mod_SDCard-HG680P-k6.1.138-all-tunnel-all-tunnel.img.gz"
@@ -6255,7 +6254,7 @@
         "state": "uploaded",
         "size": 466621497,
         "digest": null,
-        "download_count": 108,
+        "download_count": 110,
         "created_at": "2025-04-17T09:10:51Z",
         "updated_at": "2025-04-17T09:11:04Z",
         "browser_download_url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-24.10.1-17042025/RTA-WRT-OpenWrt-24.10.1-Allwinner_OrangePi_Zero3-k6.1.31-AW64-DBAI-all-tunnel.img.gz"
@@ -6939,7 +6938,7 @@
         "state": "uploaded",
         "size": 409221359,
         "digest": null,
-        "download_count": 84,
+        "download_count": 86,
         "created_at": "2025-04-17T09:20:54Z",
         "updated_at": "2025-04-17T09:21:07Z",
         "browser_download_url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-24.10.1-17042025/RTA-WRT-OpenWrt-24.10.1-Amlogic_s905x-Mod_SDCard-B860H_v1-v2-k6.1.66-DBAI-all-tunnel-all-tunnel.img.gz"
@@ -7047,7 +7046,7 @@
         "state": "uploaded",
         "size": 409221465,
         "digest": null,
-        "download_count": 88,
+        "download_count": 90,
         "created_at": "2025-04-17T09:18:33Z",
         "updated_at": "2025-04-17T09:18:45Z",
         "browser_download_url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-openwrt-24.10.1-17042025/RTA-WRT-OpenWrt-24.10.1-Amlogic_s905x-Mod_SDCard-HG680P-k6.1.66-DBAI-all-tunnel-all-tunnel.img.gz"
@@ -19353,7 +19352,7 @@
     ],
     "tarball_url": "https://api.github.com/repos/rizkikotet-dev/RTA-WRT/tarball/rtawrt-openwrt-24.10.1-15042025",
     "zipball_url": "https://api.github.com/repos/rizkikotet-dev/RTA-WRT/zipball/rtawrt-openwrt-24.10.1-15042025",
-    "body": "# 🚀 RTA-WRT - Release Information\n\n## 📥 Download Statistics\n![GitHub Downloads](https://img.shields.io/github/downloads/rizkikotet-dev/RTA-WRT/rtawrt-openwrt-24.10.1-15042025/total?style=for-the-badge&logo=Openwrt)\n\n## 📢 Support Channels\n[![Channel](https://img.shields.io/badge/Telegram-Channel-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/rtawrt)\n[![Group](https://img.shields.io/badge/Telegram-Group-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/backup_rtawrt)\n[![Personal](https://img.shields.io/badge/Telegram-Personal-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/RizkiKotet)\n\n## NOTES\n`Amlogic s905x Support Mod SDCard`\n\n## 📝 Changelog Firmware\n[**Changelog Firmware**](https://github.com/rizkikotet-dev/RTA-WRT/blob/dev/CHANGELOG.md \"**Changelog Firmware**\")\n\n\n## What's Changed\n* Dev by @rizkikotet-dev in https://github.com/rizkikotet-dev/RTA-WRT/pull/71\n* `Update workflow and script to remove \"OPHUB\" prefix from release nam… by @rizkikotet-dev in https://github.com/rizkikotet-dev/RTA-WRT/pull/72\n* Dev by @rizkikotet-dev in https://github.com/rizkikotet-dev/RTA-WRT/pull/73\n* Dev by @rizkikotet-dev in https://github.com/rizkikotet-dev/RTA-WRT/pull/74\n\n\n**Full Changelog**: https://github.com/rizkikotet-dev/RTA-WRT/compare/rtawrt-openwrt-24.10.0-08032025...rtawrt-openwrt-24.10.1-15042025",
+    "body": "# �� RTA-WRT - Release Information\n\n## 📥 Download Statistics\n![GitHub Downloads](https://img.shields.io/github/downloads/rizkikotet-dev/RTA-WRT/rtawrt-openwrt-24.10.1-15042025/total?style=for-the-badge&logo=Openwrt)\n\n## 📢 Support Channels\n[![Channel](https://img.shields.io/badge/Telegram-Channel-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/rtawrt)\n[![Group](https://img.shields.io/badge/Telegram-Group-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/backup_rtawrt)\n[![Personal](https://img.shields.io/badge/Telegram-Personal-%23059dfa?style=for-the-badge&logo=Telegram)](https://t.me/RizkiKotet)\n\n## NOTES\n`Amlogic s905x Support Mod SDCard`\n\n## 📝 Changelog Firmware\n[**Changelog Firmware**](https://github.com/rizkikotet-dev/RTA-WRT/blob/dev/CHANGELOG.md \"**Changelog Firmware**\")\n\n\n## What's Changed\n* Dev by @rizkikotet-dev in https://github.com/rizkikotet-dev/RTA-WRT/pull/71\n* `Update workflow and script to remove \"OPHUB\" prefix from release nam… by @rizkikotet-dev in https://github.com/rizkikotet-dev/RTA-WRT/pull/72\n* Dev by @rizkikotet-dev in https://github.com/rizkikotet-dev/RTA-WRT/pull/73\n* Dev by @rizkikotet-dev in https://github.com/rizkikotet-dev/RTA-WRT/pull/74\n\n\n**Full Changelog**: https://github.com/rizkikotet-dev/RTA-WRT/compare/rtawrt-openwrt-24.10.0-08032025...rtawrt-openwrt-24.10.1-15042025",
     "mentions_count": 1
   },
   {
@@ -22772,7 +22771,7 @@
         "state": "uploaded",
         "size": 456523099,
         "digest": null,
-        "download_count": 149,
+        "download_count": 151,
         "created_at": "2025-03-01T22:08:02Z",
         "updated_at": "2025-03-01T22:08:18Z",
         "browser_download_url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/download/rtawrt-ulo-immortalwrt-24.10.0-02032025/RTA-WRT-ImmortalWrt-24.10.0-Allwinner_OrangePi_Zero3-k6.1.31-AW64-DBAI-all-tunnel.img.gz"
@@ -50184,7 +50183,7 @@
         "state": "uploaded",
         "size": 432880781,
         "digest": null,
-        "download_count": 39,
+        "download_count": 41,
         "created_at": "2025-02-17T05:29:46Z",
         "updated_at": "2025-02-17T05:30:34Z",
         "browser_download_url": "https://github.com/rizkikotet-dev/RTA-WRT/releases/download/openwrt_24.10.0-simpel-main-17022025/RTA-WRT-24.10.0-Allwinner_OrangePi_Zero3-k6.1.31-AW64-DBAI.img.gz"
