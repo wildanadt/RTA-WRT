@@ -14,9 +14,11 @@ set -o pipefail # Exit if any command in a pipe fails
 
 # Constants
 readonly GH_API="https://api.github.com/repos"
-readonly IMMORTALWRT_URL=$([ "$VEROP" = "snapshots" ] && \
-    echo "https://downloads.immortalwrt.org/snapshots/packages/${ARCH_3}/luci" || \
-    echo "https://downloads.immortalwrt.org/releases/packages-${VEROP}/${ARCH_3}/luci")
+if [ "$VEROP" = "snapshots" ]; then
+    readonly IMMORTALWRT_URL="https://downloads.immortalwrt.org/snapshots/packages/${ARCH_3}/luci"
+else
+    readonly IMMORTALWRT_URL="https://downloads.immortalwrt.org/releases/packages-${VEROP}/${ARCH_3}/luci"
+fi
 
 # Initialize variables
 declare -a openclash_ipk passwall_ipk
