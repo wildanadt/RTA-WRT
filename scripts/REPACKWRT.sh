@@ -2,7 +2,7 @@
 #
 # repackwrt - Script to repackage OpenWRT firmware for various boards
 # 
-# Usage: repackwrt [--OPHUB|--ULO] -t <target_board> -k <kernel_version> -tn <tunnel_type>
+# Usage: repackwrt [--OPHUB|--ULO] -t <target_board> -k <kernel_version>
 
 # Source the include file containing common functions and variables
 if [[ ! -f "./scripts/INCLUDE.sh" ]]; then
@@ -25,14 +25,13 @@ readonly WORK_DIR="${GITHUB_WORKSPACE:-$(pwd)}/${WORKING_DIR:-}"
 # Function to display usage information
 show_usage() {
     cat << EOF
-Usage: repackwrt [--OPHUB|--ULO] -t <target_board> -k <kernel_version> -tn <tunnel_type>
+Usage: repackwrt [--OPHUB|--ULO] -t <target_board> -k <kernel_version>
 
 Arguments:
   --OPHUB, --ophub    Use Ophub builder
   --ULO, --ulo        Use ULO builder
   -t, --target        Target board name
   -k, --kernel        Kernel version to use
-  -tn, --tunnel       Tunnel type
 
 Examples:
   repackwrt --OPHUB -t amlogic -k 5.15.100 -tn wireguard
@@ -57,7 +56,6 @@ repackwrt() {
     local builder_type=""
     local target_board=""
     local target_kernel=""
-    local tunnel_type=""
     
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -79,14 +77,6 @@ repackwrt() {
                     show_usage
                 fi
                 target_kernel="$2"
-                shift 2
-                ;;
-            -tn|--tunnel)
-                if [[ -z "$2" || "$2" == -* ]]; then
-                    error_msg "Missing argument for $1"
-                    show_usage
-                fi
-                tunnel_type="$2"
                 shift 2
                 ;;
             -h|--help)
@@ -112,11 +102,6 @@ repackwrt() {
     
     if [[ -z "$target_kernel" ]]; then
         error_msg "Target kernel (-k) is required"
-        show_usage
-    fi
-
-    if [[ -z "$tunnel_type" ]]; then
-        error_msg "Tunnel type (-tn) is required"
         show_usage
     fi
 
@@ -178,7 +163,7 @@ repackwrt() {
 
     # Find and validate rootfs file
     log "INFO" "Searching for rootfs file..."
-    local rootfs_pattern="${WORK_DIR}/compiled_images/*_${tunnel_type}-rootfs.tar.gz"
+    local rootfs_pattern="${WORK_DIR}/compiled_images/*-rootfs.tar.gz"
     local rootfs_files=( ${rootfs_pattern} )
     
     if [[ ${#rootfs_files[@]} -eq 0 || ! -f "${rootfs_files[0]}" ]]; then

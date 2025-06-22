@@ -15,9 +15,6 @@ on:
           - immortalwrt:24.10.1
           - immortalwrt:23.05.4
           - immortalwrt:snapshots
-          - lede:24.10.1
-          - lede:23.05.5
-          - lede:snapshots
       target:
         description: "Select device board"
         required: false
@@ -67,20 +64,6 @@ on:
           - ULO Allwinner H618 Orange Pi Zero3
           - ULO Rockchip rk3566 Orange Pi 3B
           - ULO Rockchip rk3588s Orange Pi 5
-      tunnel:
-        description: "Select VPN Client app:"
-        required: true
-        default: "all-tunnel"
-        type: choice
-        options:
-          - openclash
-          - passwall
-          - nikki
-          - openclash-passwall
-          - nikki-passwall
-          - nikki-openclash
-          - all-tunnel
-          - no-tunnel
       clean:
         description: "Do 'make clean' for each run"
         required: false
@@ -98,7 +81,6 @@ env:
   DEBIAN_FRONTEND: noninteractive
   RELEASE_BRANCH: ${{ github.event.inputs.release_branch }}
   TARGET: ${{ github.event.inputs.target }}
-  TUNNEL: ${{ github.event.inputs.tunnel }}
   CLEAN: ${{ github.event.inputs.clean }}
 
 jobs:
@@ -183,8 +165,6 @@ jobs:
             echo "target=$(jq -nc --arg d "${{ github.event.inputs.target }}" '[$d]')" >> $GITHUB_OUTPUT
           fi
 
-          echo "Selected tunnel option: [ ${{ github.event.inputs.tunnel }} ]"
-
       - name: Setup Release Environment
         id: setupenv
         run: |
@@ -211,17 +191,8 @@ jobs:
               VEROP="$(echo "${BRANCH}" | awk -F. '{print $1"."$2}')"
               DOWNLOAD_BASE="https://immortalwrt.org/releases"
             fi
-          elif [ "$BASE" = "lede" ]; then
-            BASE="lede"
-            if [ "$BRANCH" = "snapshots" ]; then
-              VEROP="snapshots"
-              DOWNLOAD_BASE="https://mirrors.tencent.com/lede/snapshots"
-            else
-              VEROP="$(echo "${BRANCH}" | awk -F. '{print $1"."$2}')"
-              DOWNLOAD_BASE="https://mirrors.tencent.com/lede/releases"
-            fi
           else
-            echo "Error: Unsupported base branch '$BASE'. Supported bases are: openwrt, immortalwrt, lede."
+            echo "Error: Unsupported base branch '$BASE'. Supported bases are: openwrt, immortalwrt."
             exit 1
           fi
 
@@ -248,13 +219,8 @@ jobs:
             RELEASE_TAG="rtawrt-immortalwrt-${BRANCH}-${DATE}"
             echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
             echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_OUTPUT
-          elif [ "${BASE}" == "lede" ]; then
-            RELEASE_NAME="RTA-WRT-LEDE-${BRANCH}-${DATE}"
-            RELEASE_TAG="rtawrt-lede-${BRANCH}-${DATE}"
-            echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
-            echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_OUTPUT
           else
-            echo "Error: Unsupported base branch '$BASE'. Supported bases are: openwrt, immortalwrt, lede."
+            echo "Error: Unsupported base branch '$BASE'. Supported bases are: openwrt, immortalwrt."
             exit 1
           fi
           echo "status=success" >> $GITHUB_OUTPUT
@@ -344,7 +310,6 @@ jobs:
           case $BASE in
             openwrt)     OP_BASE="OpenWrt" ;;
             immortalwrt) OP_BASE="ImmortalWrt" ;;
-            lede)       OP_BASE="LEDE" ;;
           esac
           echo "OP_BASE=$OP_BASE" >> $GITHUB_ENV
 
@@ -519,10 +484,8 @@ jobs:
               RELEASE="${DOWNLOAD_BASE}/targets/${TARGET_SYSTEM}/openwrt-imagebuilder-${TARGET_NAME}.Linux-x86_64.tar.zst"
             elif [ "${BASE}" = "immortalwrt" ]; then
               RELEASE="${DOWNLOAD_BASE}/targets/${TARGET_SYSTEM}/immortalwrt-imagebuilder-${TARGET_NAME}.Linux-x86_64.tar.zst"
-            elif [ "${BASE}" = "lede" ]; then
-              RELEASE="${DOWNLOAD_BASE}/targets/${TARGET_SYSTEM}/openwrt-imagebuilder-${TARGET_NAME}.Linux-x86_64.tar.zst"
             else
-              echo "Error: Unsupported base branch '$BASE'. Supported bases are: openwrt, immortalwrt, lede."
+              echo "Error: Unsupported base branch '$BASE'. Supported bases are: openwrt, immortalwrt."
               exit 1
             fi
           else
@@ -535,12 +498,8 @@ jobs:
               CURVER=$(echo "${BRANCH}" | cut -d'.' -f1)
               archive_ext=$([ "${CURVER}" -ge "24" ] && echo "tar.zst" || echo "tar.xz")
               RELEASE="${DOWNLOAD_BASE}/${BRANCH}/targets/${TARGET_SYSTEM}/immortalwrt-imagebuilder-${BRANCH}-${TARGET_NAME}.Linux-x86_64.${archive_ext}"
-            elif [ "${BASE}" = "lede" ]; then
-              CURVER=$(echo "${BRANCH}" | cut -d'.' -f1)
-              archive_ext=$([ "${CURVER}" -ge "24" ] && echo "tar.zst" || echo "tar.xz")
-              RELEASE="${DOWNLOAD_BASE}/${BRANCH}/targets/${TARGET_SYSTEM}/openwrt-imagebuilder-${BRANCH}-${TARGET_NAME}.Linux-x86_64.${archive_ext}"
             else
-              echo "Error: Unsupported base branch '$BASE'. Supported bases are: openwrt, immortalwrt, lede."
+              echo "Error: Unsupported base branch '$BASE'. Supported bases are: openwrt, immortalwrt."
               exit 1
             fi
           fi
@@ -594,7 +553,7 @@ jobs:
 
           # Configure tunnel apps
           chmod +x scripts/TUNNEL.sh
-          ./scripts/TUNNEL.sh ${{ env.TUNNEL }}
+          ./scripts/TUNNEL.sh
 
           df -hT ${PWD}
           echo "status=success" >> $GITHUB_OUTPUT
@@ -613,20 +572,20 @@ jobs:
           fi
             
           # Build image
-          time ./make-image.sh ${PROFILE} ${{ env.TUNNEL }}
+          time ./make-image.sh ${PROFILE}
             
           # Move and rename output files
           if [[ "$TYPE" =~ ^(OPHUB|ULO)$ ]]; then
               for file in bin/targets/"${TARGET_SYSTEM}"/*-rootfs.tar.gz; do
                 if [ -f "$file" ]; then
-                  new_name="RTA-WRT_$(basename "$file" -rootfs.tar.gz)_${{ env.TUNNEL }}-rootfs.tar.gz"
+                  new_name="RTA-WRT_$(basename "$file" -rootfs.tar.gz)-rootfs.tar.gz"
                   mv "$file" compiled_images/$new_name
                 fi
               done
           else
               for file in bin/targets/"${TARGET_SYSTEM}"/*.img.gz; do
                 if [ -f "$file" ]; then
-                  new_name="RTA-WRT_$(basename "$file" .img.gz)_${{ env.TUNNEL }}.img.gz"
+                  new_name="RTA-WRT_$(basename "$file" .img.gz).img.gz"
                   mv "$file" compiled_images/$new_name
                 fi
               done
@@ -645,7 +604,7 @@ jobs:
           chmod +x scripts/REPACKWRT.sh
           echo "Repacking OpenWrt images ${TYPE}..."
           if [[ "$TYPE" =~ ^(OPHUB|ULO)$ ]]; then
-            ./scripts/REPACKWRT.sh "$TYPE" "$TARGET_BUILD" "$KERNEL" "${{ env.TUNNEL }}"
+            ./scripts/REPACKWRT.sh "$TYPE" "$TARGET_BUILD" "$KERNEL"
           fi
           echo "status=success" >> $GITHUB_OUTPUT
 
@@ -734,7 +693,6 @@ jobs:
           THREAD_ID: ${{ secrets.THREAD_ID }}
           SOURCE: ${{ needs.prebuild.outputs.base }}
           VERSION: ${{ needs.prebuild.outputs.branch }}
-          BUILD_TYPE: ${{ env.TUNNEL }}
           FOR: ${{ github.ref_name }}
           RELEASE_TAG: ${{ needs.prebuild.outputs.release_tag }}
 

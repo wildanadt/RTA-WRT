@@ -106,9 +106,6 @@ validate_snapshots_config() {
     if is_snapshots; then
         log "INFO" "Validating snapshots configuration..."
         # Add any specific validation for snapshots builds
-        if [ -n "${TUNNEL}" ] && [ "${TUNNEL}" != "no-tunnel" ]; then
-            log "WARNING" "Some tunnel packages might not be available in snapshots"
-        fi
     fi
 }
 

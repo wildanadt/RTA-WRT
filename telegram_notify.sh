@@ -205,7 +205,7 @@ parse_buttons() {
         url=$(echo "$url" | xargs)
 
         # Skip empty lines or specific unwanted patterns
-        if [[ -z "$name" || -z "$url" || "$name" == *"all-tunnelall-tunnel"* ]]; then
+        if [[ -z "$name" || -z "$url" ]]; then
             continue
         fi
 
@@ -812,7 +812,7 @@ ${firmware_js_escaped}
         showTooltip(item) {
           const deviceType = this.getDeviceType(item.name);
           const kernelVersion = this.getKernelVersion(item.name);
-          const features = item.name.includes('all-tunnel') ? 'Includes tunneling support' : 'Standard version';
+          const features = 'Includes tunneling support';
           
           Swal.fire({
             title: this.formatDeviceName(item.name),
@@ -917,7 +917,7 @@ ${firmware_js_escaped}
                 
                 <h3 class="text-lg font-semibold mb-2 text-primary-400">Feature Tags</h3>
                 <ul class="space-y-1 text-sm">
-                  <li>• <strong>all-tunnel</strong>: Includes all tunneling protocols and VPN support</li>
+                  <li>• <strong>All Tunnel</strong>: Includes all tunneling protocols and VPN support</li>
                 </ul>
               </div>
             \`,

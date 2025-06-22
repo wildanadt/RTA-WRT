@@ -157,50 +157,10 @@ main() {
     
     # Determine core files first
     determine_core_files
-    
-    case "$1" in
-        openclash)
-            setup_openclash || rc=1
-            remove_icons "passwall.png" "mihomo.png"
-            ;;
-        passwall)
-            setup_passwall || rc=1
-            remove_icons "clash.png" "mihomo.png"
-            ;;
-        nikki)
-            setup_nikki || rc=1
-            remove_icons "clash.png" "passwall.png"
-            ;;
-        openclash-passwall)
-            setup_openclash || rc=1
-            setup_passwall || rc=1
-            remove_icons "mihomo.png"
-            ;;
-        nikki-passwall)
-            setup_nikki || rc=1
-            setup_passwall || rc=1
-            remove_icons "clash.png"
-            ;;
-        nikki-openclash)
-            setup_nikki || rc=1
-            setup_openclash || rc=1
-            remove_icons "passwall.png"
-            ;;
-        all-tunnel)
-            log "INFO" "Installing all tunnel packages"
-            setup_openclash || rc=1
-            setup_passwall || rc=1
-            setup_nikki || rc=1
-            ;;
-        no-tunnel)
-            log "INFO" "Using no tunnel packages"
-            remove_icons "clash.png" "passwall.png" "mihomo.png"
-            ;;
-        *)
-            log "ERROR" "Invalid option. Usage: $0 {openclash|passwall|nikki|openclash-passwall|nikki-passwall|nikki-openclash|all-tunnel|no-tunnel}"
-            exit 1
-            ;;
-    esac
+    log "INFO" "Installing all tunnel packages"
+    setup_openclash || rc=1
+    setup_passwall || rc=1
+    setup_nikki || rc=1
 
     if [[ ${rc} -ne 0 ]]; then
         error_msg "One or more package installations failed"

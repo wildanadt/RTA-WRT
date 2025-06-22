@@ -51,31 +51,7 @@ NIKKI+="nikki luci-app-nikki"
 PASSWALL+="chinadns-ng dns2socks dns2tcp geoview hysteria ipt2socks microsocks naiveproxy simple-obfs sing-box tcping trojan-plus tuic-client v2ray-core v2ray-plugin xray-core xray-plugin v2ray-geoip v2ray-geosite luci-app-passwall"
 
 # Tunnel options handling
-handle_tunnel_option() {
-    case "$1" in
-        "openclash")
-            PACKAGES+=" $OPENCLASH"
-            ;;
-        "passwall")
-            PACKAGES+=" $PASSWALL"
-            ;;
-        "nikki")
-            PACKAGES+=" $NIKKI"
-            ;;
-        "openclash-passwall")
-            PACKAGES+=" $OPENCLASH $PASSWALL"
-            ;;
-        "nikki-passwall")
-            PACKAGES+=" $NIKKI $PASSWALL"
-            ;;
-        "nikki-openclash")
-            PACKAGES+=" $NIKKI $OPENCLASH"
-            ;;
-        "all-tunnel")
-            PACKAGES+=" $OPENCLASH $PASSWALL $NIKKI"
-            ;;
-    esac
-}
+PACKAGES+=" $OPENCLASH $PASSWALL $NIKKI"
 
 # Remote Services
 PACKAGES+=" luci-app-zerotier luci-app-cloudflared tailscale luci-app-tailscale"
@@ -130,13 +106,11 @@ handle_release_packages() {
 # Main build function
 build_firmware() {
     local profile=$1
-    local tunnel_option=$2
 
     log "INFO" "Starting build for profile: $profile"
     
-    # Handle packages based on profile and tunnel option
+    # Handle packages based on profile option
     handle_profile_packages "$profile"
-    handle_tunnel_option "$tunnel_option"
     handle_release_packages
     
     # Custom Files
