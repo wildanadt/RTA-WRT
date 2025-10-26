@@ -150,9 +150,10 @@ remove_icons() {
 # Main function
 main() {
     local rc=0
-    
+    log "Tunnel1"
     # Determine core files first
     determine_core_files
+    log "Tunnel2"
     
     case "$1" in
         openclash)
